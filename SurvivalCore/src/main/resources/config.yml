@@ -1,0 +1,26 @@
+server-name: "SurvivalCraft"
+currency-name: "Éclat"
+currency-symbol: "✦"
+
+menu-command: "menu"
+scoreboard: true
+scoreboard-update-ticks: 600
+
+death-sack-timeout: -1
+death-beacon-duration: 300
+
+weekly-reset-day: MONDAY
+weekly-reset-hour: 0
+
+common-chest-location:
+  world: world
+  x: 0
+  y: 64
+  z: 0
+
+tax-rate: 0.05
+common-fund-rate: 0.05
+
+bluemap:
+  enabled: true
+  port: 8100

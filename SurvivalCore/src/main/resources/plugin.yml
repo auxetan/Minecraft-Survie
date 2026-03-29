@@ -1,0 +1,89 @@
+name: SurvivalCore
+version: '${version}'
+main: com.survivalcore.SurvivalCore
+api-version: '1.21'
+authors: [SurvivalTeam]
+description: Plugin monolithique custom pour serveur survival RPG
+depend: [Vault]
+softdepend: [PlaceholderAPI, BlueMap, MythicMobs, SlimeFun]
+
+commands:
+  menu:
+    description: Ouvre le menu principal
+    permission: survival.menu
+  classe:
+    description: Choisir ou voir sa classe
+    permission: survival.class
+  job:
+    description: Choisir ou voir son job
+    permission: survival.job
+  balance:
+    description: Voir son argent
+    permission: survival.economy
+    aliases: [bal, money]
+  pay:
+    description: Payer un joueur
+    permission: survival.economy
+    usage: /pay <joueur> <montant>
+  shop:
+    description: Ouvrir le shop admin
+    permission: survival.shop
+  vendre:
+    description: Vendre l'item en main
+    permission: survival.market
+    usage: /vendre <prix>
+  marche:
+    description: Voir le marché joueur
+    permission: survival.market
+  coffre-commun:
+    description: Ouvrir le coffre commun
+    permission: survival.chest
+  quetes:
+    description: Voir ses quêtes
+    permission: survival.quests
+  classement:
+    description: Voir les leaderboards
+    permission: survival.leaderboard
+  deaths:
+    description: Voir position dernière mort
+    permission: survival.death
+  waypoint:
+    description: Gérer ses waypoints
+    permission: survival.waypoint
+    usage: /waypoint add <nom>
+  claim:
+    description: Protéger un chunk (système de claim)
+    permission: survival.claim
+    usage: /claim [info|list|unclaim|add <joueur>|remove <joueur>]
+  admin:
+    description: Commandes admin SurvivalCore
+    permission: survival.admin
+    usage: /admin <reload|givemoney|setweekly>
+
+permissions:
+  survival.menu:
+    default: true
+  survival.class:
+    default: true
+  survival.job:
+    default: true
+  survival.economy:
+    default: true
+  survival.shop:
+    default: true
+  survival.market:
+    default: true
+  survival.chest:
+    default: true
+  survival.quests:
+    default: true
+  survival.leaderboard:
+    default: true
+  survival.death:
+    default: true
+  survival.waypoint:
+    default: true
+  survival.claim:
+    default: true
+  survival.admin:
+    default: op

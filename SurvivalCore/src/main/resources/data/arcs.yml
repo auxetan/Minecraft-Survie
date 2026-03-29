@@ -1,0 +1,122 @@
+# Arcs d'exploration — quêtes longues multi-étapes
+# Un seul arc actif par joueur à la fois
+
+arcs:
+  ruines_oubliees:
+    display: "&6🗺 Les Ruines Oubliées"
+    description: "Des ruines anciennes ont été détectées dans les profondeurs..."
+    reward-money: 1500
+    reward-xp: 2000
+    reward-title: "&8[&5Explorateur des Ruines&8]"
+    steps:
+      1:
+        type: EXPLORE_BIOME
+        target: DEEP_DARK
+        description: "Trouve le biome Deep Dark"
+        hint: "Descends sous Y=-40 dans les grottes profondes"
+      2:
+        type: REACH_LOCATION
+        target: "0,−40,0"
+        radius: 200
+        description: "Atteins les ruines anciennes"
+        hint: "Cherche une structure en sculk"
+      3:
+        type: KILL_BOSS
+        target: WARDEN
+        amount: 1
+        description: "Élimine le Gardien des Ruines"
+        hint: "Le Warden rôde dans les ruines"
+      4:
+        type: GATHER
+        target: ECHO_SHARD
+        amount: 4
+        description: "Récupère 4 Éclats d'Écho"
+        hint: "Loot des coffres anciens du Deep Dark"
+      5:
+        type: DELIVER_ITEM
+        target: ECHO_SHARD
+        amount: 4
+        description: "Dépose les éclats dans le coffre communautaire"
+        hint: "Utilise /coffre-commun"
+
+  chasse_au_dragon:
+    display: "&c🐉 La Chasse au Dragon"
+    description: "Le Dragon de l'End menace l'équilibre du monde..."
+    reward-money: 2000
+    reward-xp: 3000
+    reward-title: "&8[&4Tueur de Dragon&8]"
+    steps:
+      1:
+        type: GATHER
+        target: ENDER_PEARL
+        amount: 12
+        description: "Collecte 12 Perles de l'Ender"
+        hint: "Chasse des Endermen"
+      2:
+        type: GATHER
+        target: BLAZE_POWDER
+        amount: 12
+        description: "Collecte 12 Poudres de Blaze"
+        hint: "Tue des Blazes dans le Nether"
+      3:
+        type: REACH_LOCATION
+        target: "0,40,0"
+        radius: 500
+        world: world_the_end
+        description: "Atteins le portail de l'End"
+        hint: "Active le portail avec les Yeux de l'Ender"
+      4:
+        type: KILL_BOSS
+        target: ENDER_DRAGON
+        amount: 1
+        description: "Tue l'Ender Dragon"
+        hint: "Détruis les cristaux avant d'attaquer le dragon"
+      5:
+        type: GATHER
+        target: DRAGON_EGG
+        amount: 1
+        description: "Récupère l'Œuf de Dragon"
+        hint: "Utilise un piston pour déplacer l'œuf"
+
+  temple_du_nether:
+    display: "&4🔥 Le Temple du Nether"
+    description: "Un temple oublié se cache dans les Wastes du Nether..."
+    reward-money: 1000
+    reward-xp: 1500
+    reward-title: "&8[&cMaître du Nether&8]"
+    steps:
+      1:
+        type: EXPLORE_BIOME
+        target: NETHER_WASTES
+        description: "Explore les Nether Wastes"
+        hint: "Construis un portail du Nether"
+      2:
+        type: KILL_BOSS
+        target: WITHER_SKELETON
+        amount: 20
+        description: "Élimine 20 Wither Skeletons"
+        hint: "Ils se trouvent dans les forteresses du Nether"
+      3:
+        type: GATHER
+        target: WITHER_SKELETON_SKULL
+        amount: 3
+        description: "Obtiens 3 Crânes de Wither Skeleton"
+        hint: "Drop rare des Wither Skeletons"
+      4:
+        type: KILL_BOSS
+        target: WITHER
+        amount: 1
+        description: "Invoque et tue le Wither"
+        hint: "Place 4 Soul Sand + 3 crânes"
+      5:
+        type: GATHER
+        target: NETHER_STAR
+        amount: 1
+        description: "Récupère l'Étoile du Nether"
+        hint: "Loot du Wither"
+      6:
+        type: DELIVER_ITEM
+        target: NETHER_STAR
+        amount: 1
+        description: "Dépose l'Étoile dans le coffre communautaire"
+        hint: "Utilise /coffre-commun"

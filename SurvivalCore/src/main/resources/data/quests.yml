@@ -1,0 +1,156 @@
+# Pool de quêtes journalières
+# Chaque joueur reçoit 3 quêtes aléatoires par jour à minuit
+
+quests:
+  kill_zombies:
+    type: KILL
+    target: ZOMBIE
+    amount: 15
+    display: "Tue 15 Zombies"
+    difficulty: EASY
+    reward-money: 50
+    reward-xp: 100
+
+  kill_skeletons:
+    type: KILL
+    target: SKELETON
+    amount: 10
+    display: "Tue 10 Squelettes"
+    difficulty: EASY
+    reward-money: 60
+    reward-xp: 120
+
+  kill_creepers:
+    type: KILL
+    target: CREEPER
+    amount: 8
+    display: "Tue 8 Creepers"
+    difficulty: MEDIUM
+    reward-money: 100
+    reward-xp: 200
+
+  kill_endermen:
+    type: KILL
+    target: ENDERMAN
+    amount: 5
+    display: "Tue 5 Endermen"
+    difficulty: HARD
+    reward-money: 200
+    reward-xp: 400
+
+  kill_blazes:
+    type: KILL
+    target: BLAZE
+    amount: 8
+    display: "Tue 8 Blazes"
+    difficulty: HARD
+    reward-money: 180
+    reward-xp: 350
+
+  gather_diamonds:
+    type: GATHER
+    target: DIAMOND
+    amount: 5
+    display: "Collecte 5 Diamants"
+    difficulty: MEDIUM
+    reward-money: 150
+    reward-xp: 250
+
+  gather_iron:
+    type: GATHER
+    target: RAW_IRON
+    amount: 20
+    display: "Collecte 20 Fer brut"
+    difficulty: EASY
+    reward-money: 60
+    reward-xp: 100
+
+  gather_gold:
+    type: GATHER
+    target: RAW_GOLD
+    amount: 10
+    display: "Collecte 10 Or brut"
+    difficulty: MEDIUM
+    reward-money: 80
+    reward-xp: 150
+
+  gather_wheat:
+    type: GATHER
+    target: WHEAT
+    amount: 32
+    display: "Récolte 32 Blé"
+    difficulty: EASY
+    reward-money: 40
+    reward-xp: 80
+
+  gather_logs:
+    type: GATHER
+    target: OAK_LOG
+    amount: 64
+    display: "Coupe 64 Bûches"
+    difficulty: EASY
+    reward-money: 50
+    reward-xp: 100
+
+  craft_bread:
+    type: CRAFT
+    target: BREAD
+    amount: 16
+    display: "Fabrique 16 Pains"
+    difficulty: EASY
+    reward-money: 40
+    reward-xp: 80
+
+  craft_iron_sword:
+    type: CRAFT
+    target: IRON_SWORD
+    amount: 3
+    display: "Fabrique 3 Épées en Fer"
+    difficulty: MEDIUM
+    reward-money: 80
+    reward-xp: 150
+
+  craft_cake:
+    type: CRAFT
+    target: CAKE
+    amount: 2
+    display: "Fabrique 2 Gâteaux"
+    difficulty: MEDIUM
+    reward-money: 100
+    reward-xp: 200
+
+  travel_1000:
+    type: TRAVEL
+    target: WALK
+    amount: 1000
+    display: "Parcours 1000 blocs à pied"
+    difficulty: EASY
+    reward-money: 50
+    reward-xp: 100
+
+  travel_3000:
+    type: TRAVEL
+    target: WALK
+    amount: 3000
+    display: "Parcours 3000 blocs à pied"
+    difficulty: MEDIUM
+    reward-money: 120
+    reward-xp: 250
+
+  brew_potions:
+    type: BREW
+    target: POTION
+    amount: 5
+    display: "Brasse 5 Potions"
+    difficulty: MEDIUM
+    reward-money: 100
+    reward-xp: 200
+
+  brew_splash:
+    type: BREW
+    target: SPLASH_POTION
+    amount: 3
+    display: "Brasse 3 Potions de Splash"
+    difficulty: HARD
+    reward-money: 150
+    reward-xp: 300

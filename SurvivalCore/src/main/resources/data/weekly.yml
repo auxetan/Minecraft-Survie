@@ -1,0 +1,48 @@
+# Configuration des missions hebdomadaires
+# Chaque lundi à minuit, une mission est tirée au sort
+
+missions:
+  kill_wither_skeletons:
+    type: KILL
+    target: WITHER_SKELETON
+    amount_per_player: 10
+    display: "Éliminer les Wither Skeletons"
+    description: "Le Nether grouille de squelettes du Wither. Chaque aventurier doit en éliminer 10."
+    reward-money: 300
+    reward-xp: 500
+
+  gather_ancient_debris:
+    type: GATHER
+    target: ANCIENT_DEBRIS
+    amount_per_player: 3
+    display: "Récolter de l'Ancient Debris"
+    description: "Les forges ont besoin de Netherite. Rapportez 3 débris anciens chacun."
+    reward-money: 500
+    reward-xp: 800
+
+  kill_endermen_mass:
+    type: KILL
+    target: ENDERMAN
+    amount_per_player: 20
+    display: "Chasse aux Endermen"
+    description: "Les Endermen envahissent l'Overworld. Repoussez-les : 20 chacun."
+    reward-money: 400
+    reward-xp: 600
+
+  gather_diamonds_mass:
+    type: GATHER
+    target: DIAMOND
+    amount_per_player: 10
+    display: "La Grande Mine"
+    description: "Le trésor commun a besoin de diamants. Chaque mineur doit en trouver 10."
+    reward-money: 500
+    reward-xp: 700
+
+  explore_nether:
+    type: TRAVEL
+    target: WALK_NETHER
+    amount_per_player: 2000
+    display: "Expédition Nether"
+    description: "Explorez les terres brûlantes du Nether. Parcourez 2000 blocs chacun."
+    reward-money: 350
+    reward-xp: 500

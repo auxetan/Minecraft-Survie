@@ -1,0 +1,47 @@
+# Configuration des 3 classes
+# Cooldown de changement : 7 jours
+
+WARRIOR:
+  display-name: "&c🗡 Guerrier"
+  icon: DIAMOND_SWORD
+  passive:
+    type: MELEE_DAMAGE_BONUS
+    value: 0.20  # +20% dégâts corps à corps
+  ability1:
+    name: "Charge"
+    description: "Dash vers l'ennemi ciblé (5 blocs + knockback)"
+    cooldown: 30
+  ability2:
+    name: "Cri de Guerre"
+    description: "Strength II + Resistance I pendant 10s (rayon 10 blocs)"
+    cooldown: 60
+
+ARCHER:
+  display-name: "&a🏹 Archer"
+  icon: BOW
+  passive:
+    type: ARROW_SLOW_CHANCE
+    value: 0.15  # 15% chance Slowness II 3s
+  ability1:
+    name: "Pluie de Flèches"
+    description: "Tire 5 flèches en éventail"
+    cooldown: 20
+  ability2:
+    name: "Oeil d'Aigle"
+    description: "Dégâts x2 pendant 8 secondes"
+    cooldown: 90
+
+MAGE:
+  display-name: "&d🔮 Mage"
+  icon: BLAZE_ROD
+  passive:
+    type: POTION_RADIUS_BONUS
+    value: 0.50  # +50% rayon potions
+  ability1:
+    name: "Boule de Feu"
+    description: "Projectile en feu (8 dégâts + fire 5s)"
+    cooldown: 25
+  ability2:
+    name: "Téléportation"
+    description: "Téléportation à 30 blocs max"
+    cooldown: 120

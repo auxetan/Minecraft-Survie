@@ -1,0 +1,267 @@
+# Configuration des 6 jobs
+# Format: MATERIAL: { xp: <int>, money: <double> }
+
+MINER:
+  display-name: "&7⛏ &fMineur"
+  icon: DIAMOND_PICKAXE
+  actions:
+    DIAMOND_ORE:
+      xp: 15
+      money: 5.0
+    DEEPSLATE_DIAMOND_ORE:
+      xp: 15
+      money: 5.0
+    IRON_ORE:
+      xp: 5
+      money: 1.5
+    DEEPSLATE_IRON_ORE:
+      xp: 5
+      money: 1.5
+    GOLD_ORE:
+      xp: 8
+      money: 2.5
+    DEEPSLATE_GOLD_ORE:
+      xp: 8
+      money: 2.5
+    COPPER_ORE:
+      xp: 3
+      money: 0.8
+    DEEPSLATE_COPPER_ORE:
+      xp: 3
+      money: 0.8
+    LAPIS_ORE:
+      xp: 6
+      money: 2.0
+    DEEPSLATE_LAPIS_ORE:
+      xp: 6
+      money: 2.0
+    REDSTONE_ORE:
+      xp: 5
+      money: 1.5
+    DEEPSLATE_REDSTONE_ORE:
+      xp: 5
+      money: 1.5
+    EMERALD_ORE:
+      xp: 12
+      money: 4.0
+    DEEPSLATE_EMERALD_ORE:
+      xp: 12
+      money: 4.0
+    COAL_ORE:
+      xp: 2
+      money: 0.5
+    DEEPSLATE_COAL_ORE:
+      xp: 2
+      money: 0.5
+    ANCIENT_DEBRIS:
+      xp: 25
+      money: 10.0
+    STONE:
+      xp: 1
+      money: 0.1
+    DEEPSLATE:
+      xp: 1
+      money: 0.1
+
+FARMER:
+  display-name: "&a🌾 &fFermier"
+  icon: DIAMOND_HOE
+  actions:
+    WHEAT:
+      xp: 3
+      money: 0.5
+    CARROTS:
+      xp: 3
+      money: 0.5
+    POTATOES:
+      xp: 3
+      money: 0.5
+    BEETROOTS:
+      xp: 3
+      money: 0.5
+    MELON:
+      xp: 2
+      money: 0.3
+    PUMPKIN:
+      xp: 2
+      money: 0.3
+    SUGAR_CANE:
+      xp: 2
+      money: 0.3
+    SWEET_BERRY_BUSH:
+      xp: 2
+      money: 0.4
+    NETHER_WART:
+      xp: 4
+      money: 0.8
+    COCOA:
+      xp: 3
+      money: 0.5
+    BAMBOO:
+      xp: 1
+      money: 0.2
+    CACTUS:
+      xp: 2
+      money: 0.3
+
+HUNTER:
+  display-name: "&c🏹 &fChasseur"
+  icon: BOW
+  actions:
+    ZOMBIE:
+      xp: 5
+      money: 1.0
+    SKELETON:
+      xp: 5
+      money: 1.0
+    CREEPER:
+      xp: 7
+      money: 1.5
+    SPIDER:
+      xp: 4
+      money: 0.8
+    ENDERMAN:
+      xp: 10
+      money: 3.0
+    BLAZE:
+      xp: 8
+      money: 2.5
+    WITCH:
+      xp: 8
+      money: 2.0
+    WITHER_SKELETON:
+      xp: 12
+      money: 4.0
+    PIGLIN_BRUTE:
+      xp: 10
+      money: 3.0
+    WARDEN:
+      xp: 50
+      money: 25.0
+    COW:
+      xp: 2
+      money: 0.3
+    PIG:
+      xp: 2
+      money: 0.3
+    SHEEP:
+      xp: 2
+      money: 0.3
+    CHICKEN:
+      xp: 2
+      money: 0.3
+    RABBIT:
+      xp: 2
+      money: 0.3
+
+ALCHEMIST:
+  display-name: "&d🧪 &fAlchimiste"
+  icon: BREWING_STAND
+  actions:
+    POTION:
+      xp: 6
+      money: 1.5
+    SPLASH_POTION:
+      xp: 8
+      money: 2.0
+    LINGERING_POTION:
+      xp: 10
+      money: 3.0
+
+LUMBERJACK:
+  display-name: "&6🌲 &fBûcheron"
+  icon: DIAMOND_AXE
+  actions:
+    OAK_LOG:
+      xp: 2
+      money: 0.3
+    SPRUCE_LOG:
+      xp: 2
+      money: 0.3
+    BIRCH_LOG:
+      xp: 2
+      money: 0.3
+    JUNGLE_LOG:
+      xp: 2
+      money: 0.3
+    ACACIA_LOG:
+      xp: 2
+      money: 0.3
+    DARK_OAK_LOG:
+      xp: 3
+      money: 0.4
+    CHERRY_LOG:
+      xp: 3
+      money: 0.4
+    MANGROVE_LOG:
+      xp: 3
+      money: 0.4
+    CRIMSON_STEM:
+      xp: 4
+      money: 0.6
+    WARPED_STEM:
+      xp: 4
+      money: 0.6
+
+COOK:
+  display-name: "&e🍖 &fCuisinier"
+  icon: MUSHROOM_STEW
+  actions:
+    COOKED_BEEF:
+      xp: 3
+      money: 0.5
+    COOKED_PORKCHOP:
+      xp: 3
+      money: 0.5
+    COOKED_CHICKEN:
+      xp: 3
+      money: 0.5
+    COOKED_MUTTON:
+      xp: 3
+      money: 0.5
+    COOKED_RABBIT:
+      xp: 3
+      money: 0.5
+    COOKED_COD:
+      xp: 3
+      money: 0.5
+    COOKED_SALMON:
+      xp: 4
+      money: 0.6
+    BREAD:
+      xp: 2
+      money: 0.4
+    CAKE:
+      xp: 8
+      money: 2.0
+    PUMPKIN_PIE:
+      xp: 5
+      money: 1.0
+    COOKIE:
+      xp: 2
+      money: 0.3
+    GOLDEN_APPLE:
+      xp: 15
+      money: 5.0
+    GOLDEN_CARROT:
+      xp: 6
+      money: 1.5
+    MUSHROOM_STEW:
+      xp: 4
+      money: 0.8
+    SUSPICIOUS_STEW:
+      xp: 5
+      money: 1.0
+
+# XP requise par niveau (formule : base * level^exponent)
+leveling:
+  base-xp: 100
+  exponent: 1.5
+  max-level: 100
+
+# Bonus par palier de niveau
+bonuses:
+  10: "+5% gain d'argent"
+  25: "Bonus passif unique"
+  50: "Titre spécial"
+  100: "Recettes exclusives shop"
