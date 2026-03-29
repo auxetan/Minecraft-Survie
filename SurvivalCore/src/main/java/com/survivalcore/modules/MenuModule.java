@@ -70,7 +70,7 @@ public class MenuModule implements CoreModule, Listener {
 
         // ─── Row 1 (0-8): Top Border Gradient & Player Head Profile ───
         // Gradient: dark gray (8) → gray (7) → light gray (8)
-        gui.setItem(0, createGlassPane(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(0, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
         gui.setItem(1, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
         gui.setItem(2, createGlassPane(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         gui.setItem(3, createGlassPane(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
@@ -81,10 +81,10 @@ public class MenuModule implements CoreModule, Listener {
         gui.setItem(5, createGlassPane(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         gui.setItem(6, createGlassPane(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         gui.setItem(7, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
-        gui.setItem(8, createGlassPane(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(8, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
 
         // ─── Row 2 (9-17): Core Gameplay Features ───────────────────
-        gui.setItem(9, createGlassPane(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(9, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
 
         // Slot 10: Class
         gui.setItem(10, ItemBuilder.from(Material.DIAMOND_SWORD)
@@ -147,7 +147,7 @@ public class MenuModule implements CoreModule, Listener {
                     openQuestGui(player);
                 }));
 
-        gui.setItem(17, createGlassPane(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(17, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
 
         // ─── Row 3 (18-26): Decorative Separator ────────────────────
         for (int i = 18; i <= 26; i++) {
@@ -155,7 +155,7 @@ public class MenuModule implements CoreModule, Listener {
         }
 
         // ─── Row 4 (27-35): Social/Economy Features ─────────────────
-        gui.setItem(27, createGlassPane(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(27, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
 
         // Slot 28: Shop
         gui.setItem(28, ItemBuilder.from(Material.GOLD_INGOT)
@@ -219,10 +219,10 @@ public class MenuModule implements CoreModule, Listener {
                     if (lbModule != null) lbModule.openLeaderboard(player);
                 }));
 
-        gui.setItem(35, createGlassPane(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(35, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
 
         // ─── Row 5 (36-44): Exploration Features ────────────────────
-        gui.setItem(36, createGlassPane(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(36, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
 
         // Slot 37: Arcs
         gui.setItem(37, ItemBuilder.from(Material.WRITABLE_BOOK)
@@ -286,10 +286,10 @@ public class MenuModule implements CoreModule, Listener {
                     if (deathModule != null) deathModule.openDeathGui(player);
                 }));
 
-        gui.setItem(44, createGlassPane(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(44, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
 
         // ─── Row 6 (45-53): Bottom Border & Weekly Mission ──────────
-        gui.setItem(45, createGlassPane(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(45, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
         gui.setItem(46, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
         gui.setItem(47, createGlassPane(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         gui.setItem(48, createGlassPane(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
@@ -310,7 +310,7 @@ public class MenuModule implements CoreModule, Listener {
         gui.setItem(50, createGlassPane(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         gui.setItem(51, createGlassPane(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         gui.setItem(52, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
-        gui.setItem(53, createGlassPane(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(53, createGlassPane(Material.GRAY_STAINED_GLASS_PANE));
 
         // Play sound effect
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
@@ -343,7 +343,7 @@ public class MenuModule implements CoreModule, Listener {
             String weeklyStatus = getWeeklyStatus(player);
 
             skullMeta.displayName(Component.text("§b" + player.getName() + "'s Profil"));
-            skullMeta.lore(
+            skullMeta.lore(java.util.List.of(
                     Component.text("§7───────────────────────"),
                     Component.text("§bClasse: §f" + classInfo),
                     Component.text("§eJob: §f" + jobInfo),
@@ -352,7 +352,7 @@ public class MenuModule implements CoreModule, Listener {
                     Component.text("§eQuêtes (aujourd'hui): §f" + questsCompleted),
                     Component.text("§dMission Hebdo: §f" + weeklyStatus),
                     Component.text("§7───────────────────────")
-            );
+            ));
 
             head.setItemMeta(skullMeta);
         }

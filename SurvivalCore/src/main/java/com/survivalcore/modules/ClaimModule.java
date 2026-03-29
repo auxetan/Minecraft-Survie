@@ -245,7 +245,7 @@ public class ClaimModule implements CoreModule, Listener {
         gui.getFiller().fill(filler);
 
         // Row 1: Gradient border + info
-        gui.setItem(0, glassFill(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(0, glassFill(Material.GRAY_STAINED_GLASS_PANE));
         gui.setItem(1, glassFill(Material.GRAY_STAINED_GLASS_PANE));
         gui.setItem(2, glassFill(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         gui.setItem(3, glassFill(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
@@ -274,7 +274,7 @@ public class ClaimModule implements CoreModule, Listener {
         gui.setItem(5, glassFill(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         gui.setItem(6, glassFill(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         gui.setItem(7, glassFill(Material.GRAY_STAINED_GLASS_PANE));
-        gui.setItem(8, glassFill(Material.DARK_GRAY_STAINED_GLASS_PANE));
+        gui.setItem(8, glassFill(Material.GRAY_STAINED_GLASS_PANE));
 
         // Row 2-4: Claims du joueur
         int slot = 10;
@@ -331,7 +331,7 @@ public class ClaimModule implements CoreModule, Listener {
 
         // Row 5: Bottom border
         for (int i = 36; i <= 44; i++) {
-            gui.setItem(i, glassFill(i < 38 || i > 42 ? Material.DARK_GRAY_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE));
+            gui.setItem(i, glassFill(i < 38 || i > 42 ? Material.GRAY_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE));
         }
 
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);

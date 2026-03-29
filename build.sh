@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ================================================================
-#  build.sh — Rebuild et déploie SurvivalCore sans redémarrer
-#  Si le serveur est en cours, utilise /reload confirm automatiquement
+#  build.sh — Rebuild et deploie SurvivalCore
+#  Si le serveur tourne, propose un restart propre
 # ================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVER_DIR="$SCRIPT_DIR/server"
-SCREEN_NAME="minecraft"
+SCREEN_MC="minecraft"
 
 BLUE='\033[0;34m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 info()  { echo -e "${BLUE}[INFO]${NC}  $*"; }
@@ -23,21 +23,22 @@ fi
 
 info "Build de SurvivalCore..."
 cd "$SCRIPT_DIR/SurvivalCore"
-JAVA_HOME="$JAVA_HOME" ./gradlew shadowJar --quiet \
-    || error "Build échoué."
+JAVA_HOME="$JAVA_HOME" ./gradlew shadowJar --no-daemon \
+    || error "Build echoue."
 
-PLUGIN_JAR=$(ls "$SCRIPT_DIR/SurvivalCore/build/libs/"SurvivalCore-*.jar 2>/dev/null | head -1)
-[ -z "$PLUGIN_JAR" ] && error "JAR introuvable après le build."
+PLUGIN_JAR=$(ls "$SCRIPT_DIR/SurvivalCore/build/libs/"SurvivalCore-*.jar 2>/dev/null | grep -v sources | head -1)
+[ -z "$PLUGIN_JAR" ] && error "JAR introuvable apres le build."
 
 cp "$PLUGIN_JAR" "$SERVER_DIR/plugins/"
-ok "$(basename "$PLUGIN_JAR") → $SERVER_DIR/plugins/"
+ok "$(basename "$PLUGIN_JAR") deploye."
 
-# Reload automatique si le serveur tourne
-if screen -list 2>/dev/null | grep -q "$SCREEN_NAME"; then
-    warn "Serveur en cours. Envoi de 'reload confirm'..."
-    warn "(Note : /reload peut causer des instabilités. Redémarre avec ./stop.sh + ./start.sh si besoin.)"
-    screen -S "$SCREEN_NAME" -p 0 -X stuff "reload confirm$(printf '\r')"
-    ok "Reload envoyé."
+# Restart si le serveur tourne
+if screen -list 2>/dev/null | grep -q "$SCREEN_MC"; then
+    echo ""
+    warn "Le serveur tourne. Pour appliquer les changements :"
+    echo -e "  ${YELLOW}./stop.sh && ./start.sh${NC}  (recommande)"
+    echo -e "  Ou reload risque (instable) :"
+    echo -e "  ${YELLOW}screen -S minecraft -p 0 -X stuff 'reload confirm\r'${NC}"
 else
-    info "Serveur arrêté — le plugin sera chargé au prochain ./start.sh"
+    info "Serveur arrete — le plugin sera charge au prochain ./start.sh"
 fi
