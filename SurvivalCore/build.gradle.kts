@@ -16,14 +16,13 @@ repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://jitpack.io")
-    maven("https://repo.triumphteam.dev/snapshots/")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
 
-    // TriumphGUI — framework GUI
-    implementation("dev.triumphteam:triumph-gui-paper:3.1.10")
+    // TriumphGUI — framework GUI (3.1.12 sur Maven Central)
+    implementation("dev.triumphteam:triumph-gui:3.1.12")
 
     // Vault API — économie
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
