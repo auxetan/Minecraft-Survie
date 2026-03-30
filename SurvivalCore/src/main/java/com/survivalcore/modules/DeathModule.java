@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -211,6 +212,21 @@ public class DeathModule implements CoreModule, Listener {
 
         bag.setItemMeta(meta);
         return bag;
+    }
+
+    /**
+     * Empêche n'importe qui de ramasser le sac de mort en marchant dessus.
+     * Seul le propriétaire peut le récupérer (via clic droit).
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityPickupItem(EntityPickupItemEvent event) {
+        ItemStack item = event.getItem().getItemStack();
+        if (!item.hasItemMeta()) return;
+        PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+        if (!pdc.has(deathBagKey, PersistentDataType.BYTE)) return;
+
+        // Annuler le ramassage automatique pour tout le monde — récupération uniquement via clic droit
+        event.setCancelled(true);
     }
 
     @EventHandler

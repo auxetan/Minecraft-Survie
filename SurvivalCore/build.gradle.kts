@@ -1,6 +1,8 @@
 plugins {
     java
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    // io.github.goooler.shadow est le fork maintenu de johnrengelman.shadow
+    // qui supporte les class files Java 21+ (ASM 9.7+)
+    id("io.github.goooler.shadow") version "8.1.7"
 }
 
 group = "com.survivalcore"
@@ -8,8 +10,10 @@ version = "1.0.0"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(24))
     }
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 repositories {

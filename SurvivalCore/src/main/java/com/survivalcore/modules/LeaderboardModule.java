@@ -96,11 +96,12 @@ public class LeaderboardModule implements CoreModule, Listener {
         plugin.getDatabaseManager().executeAsync(conn -> {
             Map<String, String> data = new HashMap<>();
             try (PreparedStatement ps = conn.prepareStatement(
-                    "SELECT money, job, job_level, quests_done, weekly_done FROM players WHERE uuid = ?")) {
+                    "SELECT money, class, job, job_level, quests_done, weekly_done FROM players WHERE uuid = ?")) {
                 ps.setString(1, uuid.toString());
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
                     data.put("money", String.format("%.0f", rs.getDouble("money")));
+                    data.put("class", rs.getString("class"));
                     data.put("job", rs.getString("job"));
                     data.put("job_level", String.valueOf(rs.getInt("job_level")));
                     data.put("quests_done", String.valueOf(rs.getInt("quests_done")));
@@ -137,6 +138,7 @@ public class LeaderboardModule implements CoreModule, Listener {
         }
 
         String money = data.getOrDefault("money", "0");
+        String playerClass = data.getOrDefault("class", "NONE");
         String job = data.getOrDefault("job", "NONE");
         String jobLevel = data.getOrDefault("job_level", "1");
 
@@ -158,8 +160,9 @@ public class LeaderboardModule implements CoreModule, Listener {
             }
         }
 
-        setScore(obj, "§7", 7);
-        setScore(obj, "§7Argent: §e" + money + " ✦", 6);
+        setScore(obj, "§7", 8);
+        setScore(obj, "§7Argent: §e" + money + " ✦", 7);
+        setScore(obj, "§7Classe: §d" + formatClass(playerClass), 6);
         setScore(obj, "§7Job: §b" + formatJob(job) + " Niv." + jobLevel, 5);
         setScore(obj, "§7Quêtes: §a" + questsDone + "/" + questsTotal, 4);
         setScore(obj, "§7Semaine: " + weeklyStatus, 3);
@@ -181,6 +184,16 @@ public class LeaderboardModule implements CoreModule, Listener {
         return job;
     }
 
+    private String formatClass(String cls) {
+        if (cls == null || cls.equals("NONE")) return "Aucune";
+        return switch (cls.toUpperCase()) {
+            case "WARRIOR" -> "Guerrier";
+            case "ARCHER" -> "Archer";
+            case "MAGE" -> "Mage";
+            default -> cls;
+        };
+    }
+
     // ─── GUI Leaderboard ────────────────────────────────────────
 
     public void openLeaderboard(Player player) {
@@ -192,7 +205,7 @@ public class LeaderboardModule implements CoreModule, Listener {
         StatDef stat = STATS.get(statIndex);
         int finalStatIndex = statIndex;
 
-        // Charger le top 6 depuis la DB
+        // Charger le top 6 + le rang du joueur depuis la DB
         plugin.getDatabaseManager().executeAsync(conn -> {
             List<LeaderEntry> entries = new ArrayList<>();
             try (PreparedStatement ps = conn.prepareStatement(
@@ -205,15 +218,29 @@ public class LeaderboardModule implements CoreModule, Listener {
             } catch (SQLException e) {
                 plugin.getLogger().warning("Erreur leaderboard: " + e.getMessage());
             }
-            return entries;
-        }).thenAccept(entries -> {
+            // Rang du joueur actuel (sous-requête de comptage)
+            int playerRank = -1;
+            double playerVal = 0;
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT (SELECT COUNT(*) FROM players WHERE " + stat.column + " > p." + stat.column + ") + 1 AS rank, p." + stat.column + " AS val FROM players p WHERE p.uuid = ?")) {
+                ps.setString(1, player.getUniqueId().toString());
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    playerRank = rs.getInt("rank");
+                    playerVal = rs.getDouble("val");
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Erreur rank joueur: " + e.getMessage());
+            }
+            return new LeaderboardResult(entries, playerRank, playerVal);
+        }).thenAccept(result -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
-                openLeaderboardGui(player, stat, entries, finalStatIndex);
+                openLeaderboardGui(player, stat, result.entries(), result.playerRank(), result.playerVal(), finalStatIndex);
             });
         });
     }
 
-    private void openLeaderboardGui(Player player, StatDef stat, List<LeaderEntry> entries, int statIndex) {
+    private void openLeaderboardGui(Player player, StatDef stat, List<LeaderEntry> entries, int playerRank, double playerVal, int statIndex) {
         Gui gui = Gui.gui()
                 .title(Component.text("§8✦ §6Classement : " + stat.displayName + " §8✦"))
                 .rows(6)
@@ -303,14 +330,15 @@ public class LeaderboardModule implements CoreModule, Listener {
             }
         }
 
-        // Your Rank at slot 49 (48 in 0-indexed)
-        // TODO: Fetch current player's rank from DB
+        // Your Rank at slot 48 (0-indexed)
         ItemStack yourRankItem = new ItemStack(Material.WRITABLE_BOOK);
         ItemMeta yourRankMeta = yourRankItem.getItemMeta();
         yourRankMeta.displayName(Component.text("§bVotre Classement"));
+        String rankDisplay = playerRank > 0 ? "#" + playerRank : "Non classé";
+        String valDisplay = playerRank > 0 ? String.valueOf((int) playerVal) : "0";
         yourRankMeta.lore(List.of(
-                Component.text("§7" + stat.displayName),
-                Component.text("§f#? - §e? points")
+                Component.text("§7" + stat.displayName + " : §e" + valDisplay),
+                Component.text("§fRang : §6" + rankDisplay)
         ));
         yourRankItem.setItemMeta(yourRankMeta);
         gui.setItem(48, new GuiItem(yourRankItem));
@@ -352,4 +380,5 @@ public class LeaderboardModule implements CoreModule, Listener {
 
     private record StatDef(String column, String displayName, Material icon) {}
     private record LeaderEntry(int rank, String name, double value) {}
+    private record LeaderboardResult(List<LeaderEntry> entries, int playerRank, double playerVal) {}
 }

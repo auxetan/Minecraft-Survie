@@ -226,10 +226,10 @@ public class JobModule implements CoreModule, Listener {
         double money = reward.money * moneyMultiplier;
         int xp = reward.xp;
 
-        // Donner l'argent via EconomyModule
+        // Donner l'argent via EconomyModule (gagné = alimente le fonds commun)
         EconomyModule eco = plugin.getModule(EconomyModule.class);
         if (eco != null && money > 0) {
-            eco.deposit(uuid, money);
+            eco.depositEarned(uuid, money);
         }
 
         // Ajouter l'XP job
@@ -279,7 +279,7 @@ public class JobModule implements CoreModule, Listener {
             case 5 -> {
                 // Palier Apprenti
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
-                if (eco != null) eco.deposit(uuid, 200);
+                if (eco != null) eco.depositEarned(uuid, 200);
                 giveJobItems(player, data.jobId, 5);
 
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
@@ -292,7 +292,7 @@ public class JobModule implements CoreModule, Listener {
             }
             case 10 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
-                if (eco != null) eco.deposit(uuid, 500);
+                if (eco != null) eco.depositEarned(uuid, 500);
                 giveJobItems(player, data.jobId, 10);
 
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
@@ -306,7 +306,7 @@ public class JobModule implements CoreModule, Listener {
             }
             case 20 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
-                if (eco != null) eco.deposit(uuid, 1500);
+                if (eco != null) eco.depositEarned(uuid, 1500);
                 giveJobItems(player, data.jobId, 20);
 
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
@@ -319,7 +319,7 @@ public class JobModule implements CoreModule, Listener {
             }
             case 30 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
-                if (eco != null) eco.deposit(uuid, 3000);
+                if (eco != null) eco.depositEarned(uuid, 3000);
                 giveJobItems(player, data.jobId, 30);
 
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
@@ -332,7 +332,7 @@ public class JobModule implements CoreModule, Listener {
             }
             case 50 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
-                if (eco != null) eco.deposit(uuid, 10000);
+                if (eco != null) eco.depositEarned(uuid, 10000);
                 giveJobItems(player, data.jobId, 50);
 
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
@@ -502,16 +502,31 @@ public class JobModule implements CoreModule, Listener {
             rewardAction(player, entityName);
         }
 
-        // Incrémenter kills_mobs pour tous les joueurs
-        plugin.getDatabaseManager().runAsync(conn -> {
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE players SET kills_mobs = kills_mobs + 1 WHERE uuid = ?")) {
-                ps.setString(1, player.getUniqueId().toString());
-                ps.executeUpdate();
-            } catch (SQLException e) {
-                plugin.getLogger().warning("Erreur kills_mobs: " + e.getMessage());
-            }
-        });
+        UUID killerUuid = player.getUniqueId();
+
+        if (event.getEntity() instanceof Player killed) {
+            // PvP : incrémenter kills_players du tueur
+            plugin.getDatabaseManager().runAsync(conn -> {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE players SET kills_players = kills_players + 1 WHERE uuid = ?")) {
+                    ps.setString(1, killerUuid.toString());
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    plugin.getLogger().warning("Erreur kills_players: " + e.getMessage());
+                }
+            });
+        } else {
+            // Mob tué : incrémenter kills_mobs
+            plugin.getDatabaseManager().runAsync(conn -> {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE players SET kills_mobs = kills_mobs + 1 WHERE uuid = ?")) {
+                    ps.setString(1, killerUuid.toString());
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    plugin.getLogger().warning("Erreur kills_mobs: " + e.getMessage());
+                }
+            });
+        }
     }
 
     /** Track quel joueur utilise quel brewing stand (pour ALCHEMIST). */

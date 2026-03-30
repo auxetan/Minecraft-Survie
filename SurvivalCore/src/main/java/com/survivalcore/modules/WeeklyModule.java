@@ -241,7 +241,7 @@ public class WeeklyModule implements CoreModule, Listener {
         // Récompenses individuelles
         EconomyModule eco = plugin.getModule(EconomyModule.class);
         if (eco != null) {
-            eco.deposit(uuid, currentMission.rewardMoney);
+            eco.depositEarned(uuid, currentMission.rewardMoney);
         }
 
         plugin.getDatabaseManager().runAsync(conn -> {
@@ -277,7 +277,7 @@ public class WeeklyModule implements CoreModule, Listener {
         for (Player p : Bukkit.getOnlinePlayers()) {
             // Bonus x2
             if (eco != null) {
-                eco.deposit(p.getUniqueId(), currentMission.rewardMoney);
+                eco.depositEarned(p.getUniqueId(), currentMission.rewardMoney);
             }
         }
 

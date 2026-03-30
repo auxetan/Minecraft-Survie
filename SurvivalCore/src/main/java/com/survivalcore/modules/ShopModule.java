@@ -18,12 +18,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Base64;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -305,7 +307,7 @@ public class ShopModule implements CoreModule, Listener {
 
         // Retirer 1 item
         player.getInventory().removeItem(new ItemStack(item.material, 1));
-        eco.deposit(player.getUniqueId(), item.sellPrice);
+        eco.depositEarned(player.getUniqueId(), item.sellPrice);
 
         player.sendMessage("§e✦ Vendu §f" + formatItemName(item.material.name()) + " §epour §6" + eco.formatMoney(item.sellPrice));
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.8f);
@@ -352,28 +354,28 @@ public class ShopModule implements CoreModule, Listener {
         gui.getFiller().fillBorder(filler);
 
         for (MarketListing listing : listings) {
-            try {
-                Material mat = Material.valueOf(listing.itemSerialized);
-                String sellerName = Bukkit.getOfflinePlayer(UUID.fromString(listing.sellerUuid)).getName();
-                if (sellerName == null) sellerName = "Inconnu";
+            ItemStack listItem = deserializeItem(listing.itemSerialized);
+            if (listItem == null) continue;
 
-                String finalSellerName = sellerName;
-                GuiItem item = ItemBuilder.from(mat)
-                        .name(Component.text("§f" + formatItemName(mat.name())))
-                        .lore(
-                                Component.text("§7Vendeur : §e" + finalSellerName),
-                                Component.text("§7Prix : §6" + listing.price + " ✦"),
-                                Component.text("§7Taxe : §c" + (int)(marketTax * 100) + "%"),
-                                Component.text(""),
-                                Component.text("§aClic pour acheter")
-                        )
-                        .asGuiItem(event -> {
-                            buyFromMarket(player, listing, mat);
-                        });
-                gui.addItem(item);
-            } catch (Exception ignored) {
-                // Skip invalid entries
-            }
+            String sellerName = Bukkit.getOfflinePlayer(UUID.fromString(listing.sellerUuid)).getName();
+            if (sellerName == null) sellerName = "Inconnu";
+
+            // Ajouter le lore de prix par-dessus le lore existant
+            ItemStack display = listItem.clone();
+            ItemMeta meta = display.getItemMeta();
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("§7─────────────────────"));
+            lore.add(Component.text("§7Vendeur : §e" + sellerName));
+            lore.add(Component.text("§7Prix : §6" + listing.price + " ✦"));
+            lore.add(Component.text("§7Taxe : §c" + (int)(marketTax * 100) + "%"));
+            lore.add(Component.text(""));
+            lore.add(Component.text("§aClic pour acheter"));
+            meta.lore(lore);
+            display.setItemMeta(meta);
+
+            ItemStack finalItem = listItem;
+            GuiItem guiItem = ItemBuilder.from(display).asGuiItem(event -> buyFromMarket(player, listing, finalItem));
+            gui.addItem(guiItem);
         }
 
         gui.setItem(6, 3, ItemBuilder.from(Material.ARROW)
@@ -384,7 +386,7 @@ public class ShopModule implements CoreModule, Listener {
         gui.open(player);
     }
 
-    private void buyFromMarket(Player player, MarketListing listing, Material mat) {
+    private void buyFromMarket(Player player, MarketListing listing, ItemStack item) {
         EconomyModule eco = plugin.getModule(EconomyModule.class);
         if (eco == null) return;
 
@@ -393,8 +395,11 @@ public class ShopModule implements CoreModule, Listener {
             return;
         }
 
-        // Donner l'item
-        player.getInventory().addItem(new ItemStack(mat));
+        // Donner l'item complet (enchantements préservés)
+        Map<Integer, ItemStack> overflow = player.getInventory().addItem(item.clone());
+        for (ItemStack leftover : overflow.values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+        }
 
         // Taxe : 5% va au fonds commun, le reste au vendeur
         double tax = listing.price * marketTax;
@@ -509,6 +514,42 @@ public class ShopModule implements CoreModule, Listener {
         commonFund = plugin.getConfig().getDouble("common-fund-balance", 0.0);
     }
 
+    // ─── Sérialisation ItemStack ────────────────────────────────
+
+    /** Sérialise un ItemStack (avec enchantements, NBT, lore) en Base64. */
+    private String serializeItem(ItemStack item) {
+        try {
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            org.bukkit.util.io.BukkitObjectOutputStream boos = new org.bukkit.util.io.BukkitObjectOutputStream(baos);
+            boos.writeObject(item);
+            boos.close();
+            return Base64.getEncoder().encodeToString(baos.toByteArray());
+        } catch (Exception e) {
+            plugin.getLogger().warning("Erreur sérialisation item marché: " + e.getMessage());
+            return item.getType().name(); // fallback gracieux
+        }
+    }
+
+    /** Désérialise un ItemStack depuis Base64. Retourne null si impossible. */
+    private ItemStack deserializeItem(String data) {
+        // Essayer d'abord la désérialisation complète (Base64)
+        try {
+            byte[] bytes = Base64.getDecoder().decode(data);
+            java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes);
+            org.bukkit.util.io.BukkitObjectInputStream bois = new org.bukkit.util.io.BukkitObjectInputStream(bais);
+            ItemStack item = (ItemStack) bois.readObject();
+            bois.close();
+            return item;
+        } catch (Exception ignored) {}
+
+        // Fallback pour les anciens listings (juste un nom de matériau)
+        try {
+            return new ItemStack(Material.valueOf(data));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // ─── Utilitaires ────────────────────────────────────────────
 
     private String formatItemName(String materialName) {
@@ -564,8 +605,10 @@ public class ShopModule implements CoreModule, Listener {
                 return true;
             }
 
-            // Sérialiser comme nom du matériau (simplifié)
-            String serialized = itemInHand.getType().name();
+            // Sérialiser l'item complet (enchantements, lore, NBT préservés)
+            ItemStack toList = itemInHand.clone();
+            toList.setAmount(1);
+            String serialized = serializeItem(toList);
 
             // Retirer 1 item de la main
             if (itemInHand.getAmount() > 1) {

@@ -269,7 +269,7 @@ public class ArcModule implements CoreModule, Listener {
 
         // Récompenses
         EconomyModule eco = plugin.getModule(EconomyModule.class);
-        if (eco != null) eco.deposit(uuid, def.rewardMoney);
+        if (eco != null) eco.depositEarned(uuid, def.rewardMoney);
 
         plugin.getDatabaseManager().runAsync(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(

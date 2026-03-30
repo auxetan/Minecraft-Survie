@@ -83,11 +83,21 @@ public class EconomyModule implements CoreModule, Listener {
         saveBalanceAsync(uuid, amount);
     }
 
+    /**
+     * Dépôt simple (transferts /pay, récompenses marché) — sans contribution au fonds commun.
+     */
     public void deposit(UUID uuid, double amount) {
         double newBalance = getBalance(uuid) + amount;
         setBalance(uuid, newBalance);
+    }
 
-        // 5% du gain va au fonds commun (spec : tax auto sur chaque gain)
+    /**
+     * Dépôt "gagné" (job, quête, etc.) — alimente le fonds commun à 5% et compte dans money_earned.
+     */
+    public void depositEarned(UUID uuid, double amount) {
+        deposit(uuid, amount);
+
+        // 5% du gain va au fonds commun
         ShopModule shop = plugin.getModule(ShopModule.class);
         if (shop != null) {
             shop.addToCommonFund(amount);
