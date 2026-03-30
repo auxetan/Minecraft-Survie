@@ -619,7 +619,31 @@ public class ClassModule implements CoreModule, Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        loadPlayerClass(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        loadPlayerClass(uuid);
+
+        // Vérifier après chargement si le joueur manque son grimoire
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) return;
+            ClassData data = playerClasses.get(uuid);
+            if (data == null || data.classId.equals("NONE")) return;
+
+            // Chercher un grimoire dans tout l'inventaire
+            boolean hasGrimoire = false;
+            for (ItemStack item : player.getInventory().getContents()) {
+                if (item != null && item.hasItemMeta() &&
+                        item.getItemMeta().getPersistentDataContainer().has(grimoireKey, PersistentDataType.BYTE)) {
+                    hasGrimoire = true;
+                    break;
+                }
+            }
+
+            if (!hasGrimoire) {
+                player.getInventory().addItem(createGrimoire());
+                player.sendMessage("§d✦ Ton §lGrimoire de Classe §r§d a été restauré dans ton inventaire.");
+            }
+        }, 80L); // 4s après le join pour laisser le temps à loadPlayerClass
     }
 
     @EventHandler

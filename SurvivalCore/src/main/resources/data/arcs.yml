@@ -15,17 +15,17 @@ arcs:
         description: "Trouve le biome Deep Dark"
         hint: "Descends sous Y=-40 dans les grottes profondes"
       2:
-        type: REACH_LOCATION
-        target: "0,−40,0"
-        radius: 200
-        description: "Atteins les ruines anciennes"
-        hint: "Cherche une structure en sculk"
+        type: GATHER
+        target: SCULK_CATALYST
+        amount: 3
+        description: "Récupère 3 Catalyseurs de Sculk"
+        hint: "Ils poussent dans le Deep Dark"
       3:
         type: KILL_BOSS
         target: WARDEN
         amount: 1
         description: "Élimine le Gardien des Ruines"
-        hint: "Le Warden rôde dans les ruines"
+        hint: "Le Warden rôde dans les zones sculk"
       4:
         type: GATHER
         target: ECHO_SHARD
@@ -59,10 +59,8 @@ arcs:
         description: "Collecte 12 Poudres de Blaze"
         hint: "Tue des Blazes dans le Nether"
       3:
-        type: REACH_LOCATION
-        target: "0,40,0"
-        radius: 500
-        world: world_the_end
+        type: EXPLORE_BIOME
+        target: THE_END
         description: "Atteins le portail de l'End"
         hint: "Active le portail avec les Yeux de l'Ender"
       4:
@@ -101,7 +99,7 @@ arcs:
         target: WITHER_SKELETON_SKULL
         amount: 3
         description: "Obtiens 3 Crânes de Wither Skeleton"
-        hint: "Drop rare des Wither Skeletons"
+        hint: "Drop rare des Wither Skeletons (chance ~2.5%)"
       4:
         type: KILL_BOSS
         target: WITHER
@@ -120,3 +118,109 @@ arcs:
         amount: 1
         description: "Dépose l'Étoile dans le coffre communautaire"
         hint: "Utilise /coffre-commun"
+
+  expedition_oceanique:
+    display: "&b🌊 Expédition Océanique"
+    description: "Les profondeurs des océans cachent des trésors oubliés..."
+    reward-money: 1200
+    reward-xp: 1800
+    reward-title: "&8[&bMaître des Abysses&8]"
+    steps:
+      1:
+        type: EXPLORE_BIOME
+        target: DEEP_OCEAN
+        description: "Atteins l'Océan Profond"
+        hint: "Nage vers le large jusqu'aux grandes profondeurs"
+      2:
+        type: KILL_BOSS
+        target: ELDER_GUARDIAN
+        amount: 1
+        description: "Tue l'Elder Guardian"
+        hint: "Il protège les monuments océaniques"
+      3:
+        type: GATHER
+        target: PRISMARINE_SHARD
+        amount: 32
+        description: "Récupère 32 Éclats de Prismarine"
+        hint: "Loot des Guardians et des blocs du monument"
+      4:
+        type: GATHER
+        target: HEART_OF_THE_SEA
+        amount: 1
+        description: "Trouve un Cœur de la Mer"
+        hint: "Dans les coffres au trésor des épaves"
+      5:
+        type: DELIVER_ITEM
+        target: HEART_OF_THE_SEA
+        amount: 1
+        description: "Dépose le Cœur dans le coffre communautaire"
+        hint: "Utilise /coffre-commun"
+
+  legende_de_la_foret:
+    display: "&2🌲 La Légende de la Forêt"
+    description: "Une forêt ancienne abrite une créature oubliée des temps..."
+    reward-money: 800
+    reward-xp: 1200
+    reward-title: "&8[&2Gardien de la Forêt&8]"
+    steps:
+      1:
+        type: EXPLORE_BIOME
+        target: DARK_FOREST
+        description: "Pénètre dans la Forêt Sombre"
+        hint: "Cherche une grande forêt de chênes sombres"
+      2:
+        type: GATHER
+        target: MUSHROOM_STEW
+        amount: 5
+        description: "Prépare 5 Soupes aux Champignons"
+        hint: "Champignons + bol = soupe"
+      3:
+        type: KILL_BOSS
+        target: EVOKER
+        amount: 3
+        description: "Élimine 3 Évocateurs"
+        hint: "Ils se cachent dans les manoirs de la forêt"
+      4:
+        type: GATHER
+        target: TOTEM_OF_UNDYING
+        amount: 1
+        description: "Récupère un Totem d'Immortalité"
+        hint: "Drop de l'Évocateur"
+
+  conquete_du_ciel:
+    display: "&e⚡ La Conquête du Ciel"
+    description: "Les pillards envahissent nos terres depuis leurs tours de guet..."
+    reward-money: 900
+    reward-xp: 1300
+    reward-title: "&8[&eHéros de la Guilde&8]"
+    steps:
+      1:
+        type: KILL_BOSS
+        target: PILLAGER
+        amount: 20
+        description: "Élimine 20 Pillards"
+        hint: "Attaque un avant-poste de pillards"
+      2:
+        type: KILL_BOSS
+        target: VINDICATOR
+        amount: 10
+        description: "Élimine 10 Vindicateurs"
+        hint: "Ils patrouillent autour des avant-postes"
+      3:
+        type: KILL_BOSS
+        target: RAVAGER
+        amount: 1
+        description: "Terrasse le Ravageur"
+        hint: "Déclenche un raid sur un village"
+      4:
+        type: KILL_BOSS
+        target: ILLUSIONER
+        amount: 1
+        description: "Bats l'Illusionniste — Chef de guerre"
+        hint: "Déclenche un raid au niveau maximum (wave 7)"
+      5:
+        type: GATHER
+        target: EMERALD
+        amount: 20
+        description: "Offre 20 Émeraudes au village sauvé"
+        hint: "En remerciement des villageois"

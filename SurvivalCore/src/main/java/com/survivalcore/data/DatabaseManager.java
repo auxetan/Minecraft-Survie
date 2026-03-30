@@ -175,6 +175,13 @@ public class DatabaseManager {
                     PRIMARY KEY (world, chunk_x, chunk_z)
                 );
                 """);
+
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS common_chest (
+                    slot INTEGER PRIMARY KEY,
+                    item_serialized TEXT NOT NULL
+                );
+                """);
         }
     }
 

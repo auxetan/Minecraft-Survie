@@ -33,6 +33,7 @@ public class MinimapModule implements CoreModule, Listener {
 
     private SurvivalCore plugin;
     private boolean blueMapAvailable = false;
+    private Object cachedBlueMapAPI = null; // de.bluecolored.bluemap.api.BlueMapAPI (via reflection)
 
     // Cache waypoints : UUID → list of waypoints
     private final Map<UUID, List<Waypoint>> playerWaypoints = new ConcurrentHashMap<>();
@@ -71,18 +72,15 @@ public class MinimapModule implements CoreModule, Listener {
     // ─── BlueMap Integration ────────────────────────────────────
 
     private void initBlueMapMarkers() {
-        // BlueMap API s'initialise de manière asynchrone
-        // On utilise la réflexion pour éviter une dépendance compile-time
         try {
-            // Tentera de s'enregistrer quand BlueMap est prêt
-            Class<?> blueMapAPI = Class.forName("de.bluecolored.bluemap.api.BlueMapAPI");
-            var onEnableMethod = blueMapAPI.getMethod("onEnable", java.util.function.Consumer.class);
-            onEnableMethod.invoke(null, (java.util.function.Consumer<Object>) api -> {
+            Class<?> blueMapAPIClass = Class.forName("de.bluecolored.bluemap.api.BlueMapAPI");
+            java.lang.reflect.Method onEnable = blueMapAPIClass.getMethod("onEnable", java.util.function.Consumer.class);
+            onEnable.invoke(null, (java.util.function.Consumer<Object>) api -> {
+                this.cachedBlueMapAPI = api;
                 plugin.getLogger().info("BlueMap API connectée — markers de mort et waypoints actifs.");
-                // Les markers seront ajoutés dynamiquement par les autres modules
             });
         } catch (Exception e) {
-            plugin.getLogger().info("BlueMap API pas encore disponible: " + e.getMessage());
+            plugin.getLogger().info("BlueMap API indisponible: " + e.getMessage());
             blueMapAvailable = false;
         }
     }
@@ -91,17 +89,127 @@ public class MinimapModule implements CoreModule, Listener {
      * Ajoute un marker de mort sur BlueMap (appelé par DeathModule).
      */
     public void addDeathMarker(String playerName, String uuid, double x, double y, double z, String worldName) {
-        if (!blueMapAvailable) return;
-        // Implémentation BlueMap via réflexion pour éviter la dépendance compile
-        plugin.getLogger().info("Marker de mort ajouté pour " + playerName + " à " + x + "," + y + "," + z);
+        if (!blueMapAvailable || cachedBlueMapAPI == null) return;
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+            placePoiMarker(worldName,
+                "survivalcore-deaths", "☠ Morts",
+                "death-" + uuid + "-" + System.currentTimeMillis(),
+                "☠ " + playerName, x, y, z));
     }
 
     /**
-     * Ajoute un waypoint sur BlueMap.
+     * Ajoute un marker de waypoint sur BlueMap.
      */
     public void addWaypointMarker(String uuid, String name, double x, double y, double z, String worldName) {
-        if (!blueMapAvailable) return;
-        plugin.getLogger().info("Waypoint BlueMap ajouté: " + name + " à " + x + "," + y + "," + z);
+        if (!blueMapAvailable || cachedBlueMapAPI == null) return;
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+            placePoiMarker(worldName,
+                "survivalcore-waypoints-" + uuid, "📍 Waypoints",
+                "wp-" + uuid + "-" + name.toLowerCase().replace(" ", "_"),
+                "📍 " + name, x, y, z));
+    }
+
+    /**
+     * Supprime un marker de waypoint sur BlueMap.
+     */
+    public void removeWaypointMarker(String uuid, String name) {
+        if (!blueMapAvailable || cachedBlueMapAPI == null) return;
+        String markerId = "wp-" + uuid + "-" + name.toLowerCase().replace(" ", "_");
+        String setId = "survivalcore-waypoints-" + uuid;
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> removeMarker(setId, markerId));
+    }
+
+    // ─── BlueMap Reflection Helpers ─────────────────────────────
+
+    @SuppressWarnings("unchecked")
+    private void placePoiMarker(String worldName, String setId, String setLabel,
+                                 String markerId, String label, double x, double y, double z) {
+        try {
+            Collection<?> allMaps = (Collection<?>) cachedBlueMapAPI.getClass()
+                .getMethod("getMaps").invoke(cachedBlueMapAPI);
+
+            for (Object map : allMaps) {
+                if (!matchesWorld(map, worldName)) continue;
+
+                Map<String, Object> markerSets = (Map<String, Object>)
+                    map.getClass().getMethod("getMarkerSets").invoke(map);
+
+                Object markerSet = markerSets.computeIfAbsent(setId, id -> buildMarkerSet(setLabel));
+                if (markerSet == null) continue;
+
+                Map<String, Object> markers = (Map<String, Object>)
+                    markerSet.getClass().getMethod("getMarkers").invoke(markerSet);
+                Object poi = buildPoiMarker(label, x, y, z);
+                if (poi != null) markers.put(markerId, poi);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("BlueMap placePoiMarker error: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void removeMarker(String setId, String markerId) {
+        try {
+            Collection<?> allMaps = (Collection<?>) cachedBlueMapAPI.getClass()
+                .getMethod("getMaps").invoke(cachedBlueMapAPI);
+            for (Object map : allMaps) {
+                Map<String, Object> markerSets = (Map<String, Object>)
+                    map.getClass().getMethod("getMarkerSets").invoke(map);
+                Object markerSet = markerSets.get(setId);
+                if (markerSet == null) continue;
+                Map<String, Object> markers = (Map<String, Object>)
+                    markerSet.getClass().getMethod("getMarkers").invoke(markerSet);
+                markers.remove(markerId);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("BlueMap removeMarker error: " + e.getMessage());
+        }
+    }
+
+    private boolean matchesWorld(Object map, String worldName) {
+        try {
+            Object world = map.getClass().getMethod("getWorld").invoke(map);
+            for (String methodName : new String[]{"getName", "getId"}) {
+                try {
+                    Object result = world.getClass().getMethod(methodName).invoke(world);
+                    if (result instanceof String s) {
+                        if (s.equalsIgnoreCase(worldName) || s.contains(worldName) || worldName.contains(s)) {
+                            return true;
+                        }
+                    }
+                } catch (NoSuchMethodException ignored) {}
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    private Object buildMarkerSet(String label) {
+        try {
+            Class<?> cls = Class.forName("de.bluecolored.bluemap.api.markers.MarkerSet");
+            Object builder = cls.getMethod("builder").invoke(null);
+            Class<?> b = builder.getClass();
+            b.getMethod("label", String.class).invoke(builder, label);
+            try { b.getMethod("toggleable", boolean.class).invoke(builder, true); } catch (NoSuchMethodException ignored) {}
+            try { b.getMethod("defaultHidden", boolean.class).invoke(builder, false); } catch (NoSuchMethodException ignored) {}
+            return b.getMethod("build").invoke(builder);
+        } catch (Exception e) {
+            plugin.getLogger().warning("BlueMap buildMarkerSet error: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private Object buildPoiMarker(String label, double x, double y, double z) {
+        try {
+            Class<?> cls = Class.forName("de.bluecolored.bluemap.api.markers.POIMarker");
+            Object builder = cls.getMethod("builder").invoke(null);
+            Class<?> b = builder.getClass();
+            b.getMethod("label", String.class).invoke(builder, label);
+            b.getMethod("position", double.class, double.class, double.class).invoke(builder, x, y, z);
+            return b.getMethod("build").invoke(builder);
+        } catch (Exception e) {
+            plugin.getLogger().warning("BlueMap buildPoiMarker error: " + e.getMessage());
+            return null;
+        }
     }
 
     // ─── Waypoints ──────────────────────────────────────────────
@@ -221,12 +329,11 @@ public class MinimapModule implements CoreModule, Listener {
                             Component.text("§c§lClic pour supprimer")
                     )
                     .asGuiItem(event -> {
-                        // Supprimer le waypoint
                         wps.remove(wp);
                         deleteWaypoint(uuid, wp.name);
+                        removeWaypointMarker(uuid.toString(), wp.name);
                         player.sendMessage("§c✗ Waypoint supprimé : §f" + wp.name);
                         player.playSound(player.getLocation(), Sound.BLOCK_GRAVEL_BREAK, 1.0f, 1.0f);
-                        // Réouvrir pour actualiser
                         openWaypointGui(player);
                     }));
         }
@@ -343,6 +450,7 @@ public class MinimapModule implements CoreModule, Listener {
                 boolean removed = wps.removeIf(wp -> wp.name.equalsIgnoreCase(name));
                 if (removed) {
                     deleteWaypoint(uuid, name);
+                    removeWaypointMarker(uuid.toString(), name);
                     player.sendMessage("§c✗ Waypoint supprimé : §f" + name);
                 } else {
                     player.sendMessage("§cWaypoint introuvable : §f" + name);

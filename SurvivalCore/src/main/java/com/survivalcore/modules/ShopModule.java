@@ -8,6 +8,7 @@ import dev.triumphteam.gui.guis.PaginatedGui;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -16,7 +17,11 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryAction;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -55,13 +60,21 @@ public class ShopModule implements CoreModule, Listener {
     // Market tax
     private double marketTax;
 
+    // ─── Coffre Commun (vrai inventaire partagé) ─────────────────
+    private static final String CHEST_TITLE = "§8✦ §aCoffre Communautaire §8✦";
+    // Contenu en mémoire : slot → item
+    private final Map<Integer, ItemStack> chestContents = new ConcurrentHashMap<>();
+    // Joueurs qui ont le coffre ouvert (pour sauvegarder à la fermeture)
+    private final Set<UUID> chestViewers = ConcurrentHashMap.newKeySet();
+
     @Override
     public void onEnable(SurvivalCore plugin) {
         this.plugin = plugin;
         loadShopConfig();
 
-        // Charger le fonds commun depuis la DB
+        // Charger le fonds commun et le contenu du coffre depuis la DB
         loadCommonFund();
+        loadChestContents();
 
         // Commandes
         plugin.getCommand("shop").setExecutor(new ShopCommand());
@@ -429,51 +442,135 @@ public class ShopModule implements CoreModule, Listener {
         }
     }
 
-    // ─── Coffre Commun ──────────────────────────────────────────
+    // ─── Coffre Commun (vrai inventaire partagé) ───────────────────
 
+    /** Charge le contenu du coffre depuis la DB au démarrage. */
+    private void loadChestContents() {
+        plugin.getDatabaseManager().executeAsync(conn -> {
+            Map<Integer, ItemStack> loaded = new HashMap<>();
+            try (PreparedStatement ps = conn.prepareStatement("SELECT slot, item_serialized FROM common_chest")) {
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    ItemStack item = deserializeItem(rs.getString("item_serialized"));
+                    if (item != null) loaded.put(rs.getInt("slot"), item);
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Erreur chargement coffre commun: " + e.getMessage());
+            }
+            return loaded;
+        }).thenAccept(loaded -> {
+            chestContents.clear();
+            chestContents.putAll(loaded);
+            plugin.getLogger().info("Coffre commun chargé : " + loaded.size() + " items.");
+        });
+    }
+
+    /** Ouvre le vrai inventaire partagé. */
     public void openCommonChest(Player player) {
         UUID uuid = player.getUniqueId();
+        boolean canWithdraw = canPlayerWithdraw(uuid);
 
-        Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §aCoffre Commun §8✦ §7Fonds: §6" + String.format("%.0f", commonFund) + " ✦"))
-                .rows(4)
-                .create();
+        String subtitle = canWithdraw ? "§a[Dépôt + Retrait]" : "§c[Dépôt uniquement]";
+        Inventory inv = Bukkit.createInventory(null, 54, CHEST_TITLE + " " + subtitle);
 
-        // Note: le coffre commun est un inventaire partagé simple
-        // On ne bloque que le retrait si le joueur n'a pas contribué dans les 24h
-        // Pour simplifier, on utilise un GUI TriumphGUI avec des restrictions
-
-        GuiItem info = ItemBuilder.from(Material.GOLD_BLOCK)
-                .name(Component.text("§6§l✦ Fonds Commun"))
-                .lore(
-                        Component.text("§7Total : §6" + String.format("%.0f", commonFund) + " ✦"),
-                        Component.text("§7Alimenté par 5% de chaque gain"),
-                        Component.text(""),
-                        Component.text("§eRègle : tu dois avoir contribué"),
-                        Component.text("§edans les 24h pour retirer des items")
-                )
-                .asGuiItem();
-        gui.setItem(4, info);
-
-        // Vérification contribution 24h
-        Long lastContrib = lastContribution.get(uuid);
-        boolean canWithdraw = lastContrib != null
-                && (System.currentTimeMillis() - lastContrib) < (24 * 60 * 60 * 1000);
-
-        GuiItem statusItem;
-        if (canWithdraw) {
-            statusItem = ItemBuilder.from(Material.LIME_DYE)
-                    .name(Component.text("§a✓ Tu peux déposer et retirer"))
-                    .asGuiItem();
-        } else {
-            statusItem = ItemBuilder.from(Material.RED_DYE)
-                    .name(Component.text("§c✗ Retrait bloqué"))
-                    .lore(Component.text("§7Complète un job ou une quête pour débloquer"))
-                    .asGuiItem();
+        // Remplir avec le contenu actuel
+        for (Map.Entry<Integer, ItemStack> entry : chestContents.entrySet()) {
+            if (entry.getKey() < 54) {
+                inv.setItem(entry.getKey(), entry.getValue().clone());
+            }
         }
-        gui.setItem(22, statusItem);
 
-        gui.open(player);
+        chestViewers.add(uuid);
+        player.openInventory(inv);
+        player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0f, 1.0f);
+
+        if (!canWithdraw) {
+            player.sendMessage("§e✦ Coffre Commun §7— Tu peux déposer librement.");
+            player.sendMessage("§7Pour retirer des items, complète une quête ou un job d'abord.");
+        }
+    }
+
+    private boolean canPlayerWithdraw(UUID uuid) {
+        Long last = lastContribution.get(uuid);
+        return last != null && (System.currentTimeMillis() - last) < (24L * 60 * 60 * 1000);
+    }
+
+    @EventHandler
+    public void onChestClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (!chestViewers.contains(player.getUniqueId())) return;
+        if (event.getView().getTitle() == null) return;
+        if (!event.getView().getTitle().startsWith(CHEST_TITLE)) return;
+
+        // Retrait = clic dans le coffre qui PREND un item
+        boolean isTakingFromChest = event.getClickedInventory() != null
+                && event.getClickedInventory().equals(event.getView().getTopInventory())
+                && isPickupAction(event.getAction());
+
+        if (isTakingFromChest && !canPlayerWithdraw(player.getUniqueId())) {
+            event.setCancelled(true);
+            player.sendMessage("§c✗ Tu dois avoir contribué (job ou quête) dans les 24h pour retirer des items.");
+        }
+    }
+
+    private boolean isPickupAction(InventoryAction action) {
+        return action == InventoryAction.PICKUP_ALL
+                || action == InventoryAction.PICKUP_HALF
+                || action == InventoryAction.PICKUP_ONE
+                || action == InventoryAction.PICKUP_SOME
+                || action == InventoryAction.MOVE_TO_OTHER_INVENTORY
+                || action == InventoryAction.HOTBAR_MOVE_AND_READD
+                || action == InventoryAction.HOTBAR_SWAP;
+    }
+
+    @EventHandler
+    public void onChestClose(InventoryCloseEvent event) {
+        if (!(event.getPlayer() instanceof Player player)) return;
+        UUID uuid = player.getUniqueId();
+        if (!chestViewers.remove(uuid)) return;
+        if (!event.getView().getTitle().startsWith(CHEST_TITLE)) return;
+
+        // Sauvegarder le contenu final en DB
+        Inventory inv = event.getInventory();
+        Map<Integer, ItemStack> newContents = new HashMap<>();
+        for (int i = 0; i < inv.getSize(); i++) {
+            ItemStack item = inv.getItem(i);
+            if (item != null && item.getType() != Material.AIR) {
+                newContents.put(i, item.clone());
+            }
+        }
+
+        // Mettre à jour le cache
+        chestContents.clear();
+        chestContents.putAll(newContents);
+
+        // Persister en DB async
+        plugin.getDatabaseManager().runAsync(conn -> {
+            try {
+                conn.setAutoCommit(false);
+                // Effacer l'ancien contenu
+                try (PreparedStatement del = conn.prepareStatement("DELETE FROM common_chest")) {
+                    del.executeUpdate();
+                }
+                // Insérer le nouveau
+                try (PreparedStatement ins = conn.prepareStatement(
+                        "INSERT INTO common_chest (slot, item_serialized) VALUES (?, ?)")) {
+                    for (Map.Entry<Integer, ItemStack> entry : newContents.entrySet()) {
+                        ins.setInt(1, entry.getKey());
+                        ins.setString(2, serializeItem(entry.getValue()));
+                        ins.addBatch();
+                    }
+                    ins.executeBatch();
+                }
+                conn.commit();
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Erreur sauvegarde coffre commun: " + e.getMessage());
+                try { conn.rollback(); conn.setAutoCommit(true); } catch (SQLException ignored) {}
+            }
+        });
+
+        player.playSound(player.getLocation(), Sound.BLOCK_CHEST_CLOSE, 1.0f, 1.0f);
     }
 
     // ─── Reset Légendaire hebdo ─────────────────────────────────

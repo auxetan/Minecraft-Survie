@@ -14,7 +14,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
@@ -45,14 +44,8 @@ public class MenuModule implements CoreModule, Listener {
         return "Menu";
     }
 
-    // ─── F Key Swap Handler ─────────────────────────────────────
-
-    @EventHandler
-    public void onSwapHand(PlayerSwapHandItemsEvent event) {
-        // F key triggers swap hand event — open menu
-        event.setCancelled(true);
-        openMainMenu(event.getPlayer());
-    }
+    // Note : le menu s'ouvre via /menu uniquement.
+    // La touche F (swap hand) n'est plus hijackée pour préserver le comportement vanilla.
 
     // ─── Main Menu (6 rows = 54 slots) ──────────────────────────
 
