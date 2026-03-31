@@ -5,6 +5,9 @@
 # ================================================================
 set -euo pipefail
 
+# ── Detection OS ─────────────────────────────────────────────────
+OS="$(uname -s)"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVER_DIR="$SCRIPT_DIR/server"
 SCREEN_MC="minecraft"
@@ -15,15 +18,33 @@ ok()    { echo -e "${GREEN}[OK]${NC}    $*"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 
-# Java 21
-if [ -d "/usr/lib/jvm/java-21-openjdk-amd64" ]; then
-    export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
-    export PATH="$JAVA_HOME/bin:$PATH"
+# Java 21 — portable macOS + Linux
+if [ "$OS" = "Darwin" ]; then
+    JAVA_HOME_DETECTED="$(/usr/libexec/java_home 2>/dev/null || true)"
+    if [ -z "$JAVA_HOME_DETECTED" ] && command -v brew &>/dev/null; then
+        for candidate in \
+            "$(brew --prefix openjdk@21 2>/dev/null)/libexec/openjdk.jdk/Contents/Home" \
+            "$(brew --prefix)/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"; do
+            if [ -d "$candidate" ]; then
+                JAVA_HOME_DETECTED="$candidate"
+                break
+            fi
+        done
+    fi
+    if [ -n "$JAVA_HOME_DETECTED" ]; then
+        export JAVA_HOME="$JAVA_HOME_DETECTED"
+        export PATH="$JAVA_HOME/bin:$PATH"
+    fi
+else
+    if [ -d "/usr/lib/jvm/java-21-openjdk-amd64" ]; then
+        export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+        export PATH="$JAVA_HOME/bin:$PATH"
+    fi
 fi
 
 info "Build de SurvivalCore..."
 cd "$SCRIPT_DIR/SurvivalCore"
-JAVA_HOME="$JAVA_HOME" ./gradlew shadowJar --no-daemon \
+JAVA_HOME="${JAVA_HOME:-}" ./gradlew shadowJar --no-daemon \
     || error "Build echoue."
 
 PLUGIN_JAR=$(ls "$SCRIPT_DIR/SurvivalCore/build/libs/"SurvivalCore-*.jar 2>/dev/null | grep -v sources | head -1)

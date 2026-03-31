@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -87,8 +88,18 @@ public class DeathModule implements CoreModule, Listener {
         Location deathLoc = player.getLocation().clone();
 
         // 1. Capturer l'inventaire avant le drop vanilla
-        ItemStack[] contents = player.getInventory().getContents().clone();
+        ItemStack[] rawContents = player.getInventory().getContents().clone();
         ItemStack[] armor = player.getInventory().getArmorContents().clone();
+
+        // Exclure le Grimoire de Classe du sac de mort (il sera redonné au respawn)
+        ItemStack[] contents = new ItemStack[rawContents.length];
+        for (int i = 0; i < rawContents.length; i++) {
+            if (ClassModule.isGrimoire(rawContents[i])) {
+                contents[i] = null; // ne pas mettre dans le sac
+            } else {
+                contents[i] = rawContents[i];
+            }
+        }
 
         // Empêcher le drop vanilla
         event.getDrops().clear();
@@ -211,6 +222,23 @@ public class DeathModule implements CoreModule, Listener {
 
         bag.setItemMeta(meta);
         return bag;
+    }
+
+    @EventHandler
+    public void onEntityPickupItem(EntityPickupItemEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        ItemStack item = event.getItem().getItemStack();
+        if (!item.hasItemMeta()) return;
+
+        PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+        if (!pdc.has(deathBagKey, PersistentDataType.BYTE)) return;
+
+        // C'est un sac de mort — vérifier le propriétaire
+        String ownerStr = pdc.get(ownerKey, PersistentDataType.STRING);
+        if (ownerStr == null || !ownerStr.equals(player.getUniqueId().toString())) {
+            event.setCancelled(true);
+            player.sendMessage("§cCe sac ne t'appartient pas !");
+        }
     }
 
     @EventHandler

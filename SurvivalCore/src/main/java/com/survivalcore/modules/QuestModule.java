@@ -214,7 +214,7 @@ public class QuestModule implements CoreModule, Listener {
         // Récompenses
         EconomyModule eco = plugin.getModule(EconomyModule.class);
         if (eco != null) {
-            eco.deposit(uuid, quest.definition.rewardMoney);
+            eco.depositFromEarning(uuid, quest.definition.rewardMoney);
         }
 
         // XP générale (bonus Explorateur +15%)

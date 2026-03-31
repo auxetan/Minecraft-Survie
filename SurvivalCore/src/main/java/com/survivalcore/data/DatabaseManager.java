@@ -175,6 +175,37 @@ public class DatabaseManager {
                     PRIMARY KEY (world, chunk_x, chunk_z)
                 );
                 """);
+
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS job_milestones (
+                    uuid TEXT,
+                    job_id TEXT,
+                    milestone INTEGER,
+                    PRIMARY KEY (uuid, job_id, milestone)
+                );
+                """);
+
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS common_chest (
+                    id INTEGER PRIMARY KEY DEFAULT 1,
+                    contents TEXT
+                );
+                """);
+
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS auctions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    seller_uuid TEXT NOT NULL,
+                    item_data TEXT NOT NULL,
+                    start_price REAL NOT NULL,
+                    current_bid REAL DEFAULT 0,
+                    bidder_uuid TEXT,
+                    duration_hours INTEGER DEFAULT 24,
+                    created_at BIGINT NOT NULL,
+                    expired INTEGER DEFAULT 0,
+                    collected INTEGER DEFAULT 0
+                );
+                """);
         }
     }
 

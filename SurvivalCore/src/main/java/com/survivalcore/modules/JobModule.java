@@ -58,6 +58,14 @@ public class JobModule implements CoreModule, Listener {
     // Tracking brewing stand → joueur (pour ALCHEMIST XP)
     private final Map<org.bukkit.Location, UUID> brewingPlayers = new ConcurrentHashMap<>();
 
+    // Cache des milestones déjà réclamés : UUID → Set de "JOB_ID:MILESTONE"
+    private final Map<UUID, Set<String>> claimedMilestones = new ConcurrentHashMap<>();
+
+    // Compteurs debounce stats — flushés toutes les 60s au lieu de chaque event
+    private final Map<UUID, java.util.concurrent.atomic.AtomicInteger> pendingBlocksMined = new ConcurrentHashMap<>();
+    private final Map<UUID, java.util.concurrent.atomic.AtomicInteger> pendingKillsMobs = new ConcurrentHashMap<>();
+    private final Map<UUID, java.util.concurrent.atomic.AtomicInteger> pendingKillsPlayers = new ConcurrentHashMap<>();
+
     // Leveling config
     private int baseXp = 100;
     private double exponent = 1.5;
@@ -73,16 +81,22 @@ public class JobModule implements CoreModule, Listener {
         // Charger les données des joueurs connectés
         for (Player p : Bukkit.getOnlinePlayers()) {
             loadPlayerJob(p.getUniqueId());
+            loadClaimedMilestones(p.getUniqueId());
         }
 
         Bukkit.getPluginManager().registerEvents(this, plugin);
         plugin.getCommand("job").setExecutor(new JobCommand());
+
+        // Flush des compteurs de stats toutes les 60s (1200 ticks)
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::flushStatCounters, 1200L, 1200L);
 
         plugin.getLogger().info("Job module enabled — " + jobActions.size() + " jobs chargés.");
     }
 
     @Override
     public void onDisable() {
+        // Vider les compteurs de stats avant la fermeture
+        flushStatCounters();
         // Sauvegarder toutes les données
         for (Map.Entry<UUID, JobData> entry : playerJobs.entrySet()) {
             savePlayerJobSync(entry.getKey(), entry.getValue());
@@ -229,7 +243,7 @@ public class JobModule implements CoreModule, Listener {
         // Donner l'argent via EconomyModule
         EconomyModule eco = plugin.getModule(EconomyModule.class);
         if (eco != null && money > 0) {
-            eco.deposit(uuid, money);
+            eco.depositFromEarning(uuid, money);
         }
 
         // Ajouter l'XP job
@@ -275,11 +289,16 @@ public class JobModule implements CoreModule, Listener {
         UUID uuid = player.getUniqueId();
         String jobName = getJobDisplayName(data.jobId);
 
+        // Vérifier si ce palier a déjà été réclamé
+        String cacheKey = data.jobId + ":" + data.level;
+        Set<String> claimed = claimedMilestones.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet());
+        if (claimed.contains(cacheKey)) return;
+
         switch (data.level) {
             case 5 -> {
                 // Palier Apprenti
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
-                if (eco != null) eco.deposit(uuid, 200);
+                if (eco != null) eco.depositFromEarning(uuid, 200);
                 giveJobItems(player, data.jobId, 5);
 
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
@@ -292,7 +311,7 @@ public class JobModule implements CoreModule, Listener {
             }
             case 10 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
-                if (eco != null) eco.deposit(uuid, 500);
+                if (eco != null) eco.depositFromEarning(uuid, 500);
                 giveJobItems(player, data.jobId, 10);
 
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
@@ -306,7 +325,7 @@ public class JobModule implements CoreModule, Listener {
             }
             case 20 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
-                if (eco != null) eco.deposit(uuid, 1500);
+                if (eco != null) eco.depositFromEarning(uuid, 1500);
                 giveJobItems(player, data.jobId, 20);
 
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
@@ -319,7 +338,7 @@ public class JobModule implements CoreModule, Listener {
             }
             case 30 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
-                if (eco != null) eco.deposit(uuid, 3000);
+                if (eco != null) eco.depositFromEarning(uuid, 3000);
                 giveJobItems(player, data.jobId, 30);
 
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
@@ -332,7 +351,7 @@ public class JobModule implements CoreModule, Listener {
             }
             case 50 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
-                if (eco != null) eco.deposit(uuid, 10000);
+                if (eco != null) eco.depositFromEarning(uuid, 10000);
                 giveJobItems(player, data.jobId, 50);
 
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
@@ -343,7 +362,24 @@ public class JobModule implements CoreModule, Listener {
                 player.sendMessage("§7Récompense : §6+10000 ✦ §7+ §aPack Légendaire §7+ §b5 Claims");
                 player.sendMessage("§8§m                                        ");
             }
+            default -> { return; } // Pas un palier connu — ne pas enregistrer
         }
+
+        // Marquer le palier comme réclamé en cache et en DB
+        claimed.add(cacheKey);
+        final int milestoneLevel = data.level;
+        final String jobId = data.jobId;
+        plugin.getDatabaseManager().runAsync(conn -> {
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "INSERT OR IGNORE INTO job_milestones (uuid, job_id, milestone) VALUES (?, ?, ?)")) {
+                ps.setString(1, uuid.toString());
+                ps.setString(2, jobId);
+                ps.setInt(3, milestoneLevel);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Erreur insertion job_milestone: " + e.getMessage());
+            }
+        });
     }
 
     /** Donne des items spécifiques au métier selon le palier. */
@@ -417,13 +453,27 @@ public class JobModule implements CoreModule, Listener {
         lore.add(net.kyori.adventure.text.Component.text("§8Lié au métier"));
         meta.lore(lore);
 
-        // Enchantements progressifs selon le palier
+        // Enchantements progressifs selon le palier et le type d'item
+        String matName = material.name();
+        boolean isSword = matName.contains("SWORD");
+        boolean isBow = matName.equals("BOW");
+
         if (milestone >= 5) {
-            meta.addEnchant(org.bukkit.enchantments.Enchantment.EFFICIENCY, Math.min(milestone / 5, 5), true);
+            if (isSword) {
+                meta.addEnchant(org.bukkit.enchantments.Enchantment.SHARPNESS, Math.min(milestone / 5, 5), true);
+            } else if (isBow) {
+                meta.addEnchant(org.bukkit.enchantments.Enchantment.POWER, Math.min(milestone / 5, 5), true);
+            } else {
+                meta.addEnchant(org.bukkit.enchantments.Enchantment.EFFICIENCY, Math.min(milestone / 5, 5), true);
+            }
             meta.addEnchant(org.bukkit.enchantments.Enchantment.UNBREAKING, Math.min(milestone / 10 + 1, 3), true);
         }
         if (milestone >= 20) {
-            meta.addEnchant(org.bukkit.enchantments.Enchantment.FORTUNE, Math.min(milestone / 15, 3), true);
+            if (isSword) {
+                meta.addEnchant(org.bukkit.enchantments.Enchantment.LOOTING, Math.min(milestone / 15, 3), true);
+            } else if (!isBow) {
+                meta.addEnchant(org.bukkit.enchantments.Enchantment.FORTUNE, Math.min(milestone / 15, 3), true);
+            }
         }
         if (milestone >= 50) {
             meta.addEnchant(org.bukkit.enchantments.Enchantment.MENDING, 1, true);
@@ -457,16 +507,8 @@ public class JobModule implements CoreModule, Listener {
         Player player = event.getPlayer();
         String jobId = getPlayerJobId(player.getUniqueId());
 
-        // Incrémenter blocks_mined pour TOUS les joueurs (pas seulement le Mineur)
-        plugin.getDatabaseManager().runAsync(conn -> {
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE players SET blocks_mined = blocks_mined + 1 WHERE uuid = ?")) {
-                ps.setString(1, player.getUniqueId().toString());
-                ps.executeUpdate();
-            } catch (SQLException e) {
-                plugin.getLogger().warning("Erreur blocks_mined: " + e.getMessage());
-            }
-        });
+        // Incrémenter blocks_mined pour TOUS les joueurs (débounce — flush toutes les 60s)
+        pendingBlocksMined.computeIfAbsent(player.getUniqueId(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
 
         // Mineur : minerais et pierres
         if (jobId.equals("MINER")) {
@@ -496,22 +538,20 @@ public class JobModule implements CoreModule, Listener {
         Player player = event.getEntity().getKiller();
         String jobId = getPlayerJobId(player.getUniqueId());
 
+        // Incrémenter kills_players si la victime est un joueur (débounce)
+        if (event.getEntity() instanceof Player) {
+            pendingKillsPlayers.computeIfAbsent(player.getUniqueId(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
+            return;
+        }
+
         // Chasseur : mobs
         if (jobId.equals("HUNTER")) {
             String entityName = event.getEntityType().name();
             rewardAction(player, entityName);
         }
 
-        // Incrémenter kills_mobs pour tous les joueurs
-        plugin.getDatabaseManager().runAsync(conn -> {
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE players SET kills_mobs = kills_mobs + 1 WHERE uuid = ?")) {
-                ps.setString(1, player.getUniqueId().toString());
-                ps.executeUpdate();
-            } catch (SQLException e) {
-                plugin.getLogger().warning("Erreur kills_mobs: " + e.getMessage());
-            }
-        });
+        // Incrémenter kills_mobs pour tous les joueurs (débounce)
+        pendingKillsMobs.computeIfAbsent(player.getUniqueId(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
     }
 
     /** Track quel joueur utilise quel brewing stand (pour ALCHEMIST). */
@@ -588,16 +628,71 @@ public class JobModule implements CoreModule, Listener {
 
     @EventHandler
     public void onPlayerJoin(org.bukkit.event.player.PlayerJoinEvent event) {
-        loadPlayerJob(event.getPlayer().getUniqueId());
+        UUID uuid = event.getPlayer().getUniqueId();
+        loadPlayerJob(uuid);
+        loadClaimedMilestones(uuid);
     }
 
     @EventHandler
     public void onPlayerQuit(org.bukkit.event.player.PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
+        // Vider les compteurs du joueur avant qu'il parte
+        flushPlayerCounters(uuid);
         JobData data = playerJobs.remove(uuid);
         if (data != null) {
             savePlayerJobAsync(uuid, data);
         }
+        claimedMilestones.remove(uuid);
+    }
+
+    // ─── Flush des compteurs de stats (débounce) ─────────────────
+
+    private void flushStatCounters() {
+        flushCounter(pendingBlocksMined, "blocks_mined");
+        flushCounter(pendingKillsMobs, "kills_mobs");
+        flushCounter(pendingKillsPlayers, "kills_players");
+    }
+
+    private void flushCounter(Map<UUID, java.util.concurrent.atomic.AtomicInteger> counters, String column) {
+        for (var entry : counters.entrySet()) {
+            int count = entry.getValue().getAndSet(0);
+            if (count <= 0) continue;
+            final int finalCount = count;
+            plugin.getDatabaseManager().runAsync(conn -> {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "UPDATE players SET " + column + " = " + column + " + ? WHERE uuid = ?")) {
+                    ps.setInt(1, finalCount);
+                    ps.setString(2, entry.getKey().toString());
+                    ps.executeUpdate();
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Flush " + column + ": " + e.getMessage());
+                }
+            });
+        }
+    }
+
+    /** Flush uniquement les compteurs d'un joueur spécifique (à sa déconnexion). */
+    private void flushPlayerCounters(UUID uuid) {
+        flushSingleCounter(uuid, pendingBlocksMined, "blocks_mined");
+        flushSingleCounter(uuid, pendingKillsMobs, "kills_mobs");
+        flushSingleCounter(uuid, pendingKillsPlayers, "kills_players");
+    }
+
+    private void flushSingleCounter(UUID uuid, Map<UUID, java.util.concurrent.atomic.AtomicInteger> counters, String column) {
+        var counter = counters.remove(uuid);
+        if (counter == null) return;
+        int count = counter.get();
+        if (count <= 0) return;
+        plugin.getDatabaseManager().runAsync(conn -> {
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE players SET " + column + " = " + column + " + ? WHERE uuid = ?")) {
+                ps.setInt(1, count);
+                ps.setString(2, uuid.toString());
+                ps.executeUpdate();
+            } catch (Exception e) {
+                plugin.getLogger().warning("Flush " + column + " (quit): " + e.getMessage());
+            }
+        });
     }
 
     // ─── Persistance SQLite async ───────────────────────────────
@@ -621,6 +716,23 @@ public class JobModule implements CoreModule, Listener {
             }
             return new JobData("NONE", 0, 1, 0);
         }).thenAccept(data -> playerJobs.put(uuid, data));
+    }
+
+    private void loadClaimedMilestones(UUID uuid) {
+        plugin.getDatabaseManager().executeAsync(conn -> {
+            Set<String> keys = ConcurrentHashMap.newKeySet();
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT job_id, milestone FROM job_milestones WHERE uuid = ?")) {
+                ps.setString(1, uuid.toString());
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    keys.add(rs.getString("job_id") + ":" + rs.getInt("milestone"));
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().warning("Erreur chargement milestones: " + e.getMessage());
+            }
+            return keys;
+        }).thenAccept(keys -> claimedMilestones.put(uuid, keys));
     }
 
     private void savePlayerJobAsync(UUID uuid, JobData data) {

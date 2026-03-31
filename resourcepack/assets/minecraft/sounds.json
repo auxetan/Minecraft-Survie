@@ -1,0 +1,10 @@
+{
+    "survivalcraft.announcement": {
+        "sounds": [
+            {
+                "name": "survivalcraft:announcement",
+                "stream": false
+            }
+        ]
+    }
+}

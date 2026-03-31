@@ -1,16 +1,30 @@
 #!/usr/bin/env bash
 # ================================================================
 #  setup.sh — Configuration initiale COMPLETE du serveur SurvivalCraft
-#  A lancer UNE SEULE FOIS sur ton Ace Magician (Ubuntu)
+#  A lancer UNE SEULE FOIS (macOS pour les tests, Linux/Ubuntu en prod)
 #  Installe TOUT : Java, PaperMC, plugins, Playit.gg
 # ================================================================
 set -euo pipefail
+
+# ── Detection OS / Architecture ─────────────────────────────────
+OS="$(uname -s)"
+ARCH="$(uname -m)"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVER_DIR="$SCRIPT_DIR/server"
 PLUGIN_DIR="$SERVER_DIR/plugins"
 PAPER_VERSION="1.21.4"
-PLAYIT_BIN="$SCRIPT_DIR/playit-linux-amd64"
+
+# Nom du binaire Playit selon la plateforme
+if [ "$OS" = "Darwin" ]; then
+    if [ "$ARCH" = "arm64" ]; then
+        PLAYIT_BIN="$SCRIPT_DIR/playit-darwin-aarch64"
+    else
+        PLAYIT_BIN="$SCRIPT_DIR/playit-darwin-amd64"
+    fi
+else
+    PLAYIT_BIN="$SCRIPT_DIR/playit-linux-amd64"
+fi
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; CYAN='\033[0;36m'; NC='\033[0m'
 info()  { echo -e "${BLUE}[INFO]${NC}  $*"; }
@@ -18,11 +32,27 @@ ok()    { echo -e "${GREEN}[OK]${NC}    $*"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 
+# Remplacement portable de readlink -f (non dispo sur macOS sans GNU coreutils)
+portable_realpath() {
+    python3 -c "import os; print(os.path.realpath('$1'))" 2>/dev/null || echo "$1"
+}
+
+# IP locale portable
+get_local_ip() {
+    if [ "$OS" = "Darwin" ]; then
+        ipconfig getifaddr en0 2>/dev/null || echo "localhost"
+    else
+        hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost"
+    fi
+}
+
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║   SurvivalCraft — Installation Complete              ║${NC}"
 echo -e "${CYAN}║   Tout est automatique, laisse tourner !             ║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════════════════╝${NC}"
+echo ""
+info "Plateforme detectee : $OS / $ARCH"
 echo ""
 
 # ── Creer les dossiers si besoin ────────────────────────────────
@@ -39,37 +69,77 @@ if command -v java &>/dev/null; then
 fi
 
 if [ "$JAVA_OK" = false ]; then
-    info "Installation de Java 21 (openjdk)..."
-    sudo apt-get update -qq
-    sudo apt-get install -y openjdk-21-jdk-headless
-    ok "Java 21 installe."
+    info "Installation de Java 21..."
+    if [ "$OS" = "Darwin" ]; then
+        command -v brew &>/dev/null || error "Homebrew requis sur macOS. Installe-le via https://brew.sh"
+        brew install openjdk@21
+        ok "Java 21 installe via Homebrew."
+    else
+        sudo apt-get update -qq
+        sudo apt-get install -y openjdk-21-jdk-headless
+        ok "Java 21 installe."
+    fi
 else
     ok "Java $(java -version 2>&1 | awk -F '"' '/version/{print $2}') deja present."
 fi
 
-# Forcer Java 21 si plusieurs versions
-export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
-if [ -d "/usr/lib/jvm/java-21-openjdk-amd64" ]; then
-    export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+# Configurer JAVA_HOME selon l'OS
+if [ "$OS" = "Darwin" ]; then
+    # Sur macOS, utiliser java_home si disponible
+    if /usr/libexec/java_home -v 21 &>/dev/null 2>&1; then
+        export JAVA_HOME="$(/usr/libexec/java_home -v 21)"
+    elif /usr/libexec/java_home &>/dev/null 2>&1; then
+        export JAVA_HOME="$(/usr/libexec/java_home)"
+    else
+        # Fallback Homebrew
+        for p in /opt/homebrew/opt/openjdk@21 /usr/local/opt/openjdk@21; do
+            [ -d "$p" ] && export JAVA_HOME="$p" && break
+        done
+    fi
+else
+    # Linux : privilegier la version 21 explicite si presente
+    if [ -d "/usr/lib/jvm/java-21-openjdk-amd64" ]; then
+        export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+    else
+        JAVA_BIN="$(command -v java)"
+        JAVA_REAL="$(portable_realpath "$JAVA_BIN")"
+        export JAVA_HOME="$(dirname "$(dirname "$JAVA_REAL")")"
+    fi
 fi
 export PATH="$JAVA_HOME/bin:$PATH"
+ok "JAVA_HOME = $JAVA_HOME"
 
 # ════════════════════════════════════════════════════════════════
 #  ETAPE 2 — OUTILS SYSTEME
 # ════════════════════════════════════════════════════════════════
 info "2/8  Outils systeme (screen, curl, unzip, python3)..."
-PKGS_TO_INSTALL=()
-command -v screen  &>/dev/null || PKGS_TO_INSTALL+=(screen)
-command -v unzip   &>/dev/null || PKGS_TO_INSTALL+=(unzip)
-command -v curl    &>/dev/null || PKGS_TO_INSTALL+=(curl)
-command -v python3 &>/dev/null || PKGS_TO_INSTALL+=(python3)
 
-if [ ${#PKGS_TO_INSTALL[@]} -gt 0 ]; then
-    sudo apt-get update -qq
-    sudo apt-get install -y "${PKGS_TO_INSTALL[@]}"
-    ok "Outils installes : ${PKGS_TO_INSTALL[*]}"
+if [ "$OS" = "Darwin" ]; then
+    command -v brew &>/dev/null || error "Homebrew requis sur macOS. Installe-le via https://brew.sh"
+    BREW_TO_INSTALL=()
+    command -v screen  &>/dev/null || BREW_TO_INSTALL+=(screen)
+    # curl, python3 et unzip sont generalement deja presents sur macOS
+    command -v unzip   &>/dev/null || BREW_TO_INSTALL+=(unzip)
+    command -v python3 &>/dev/null || BREW_TO_INSTALL+=(python3)
+    if [ ${#BREW_TO_INSTALL[@]} -gt 0 ]; then
+        brew install "${BREW_TO_INSTALL[@]}"
+        ok "Outils installes via Homebrew : ${BREW_TO_INSTALL[*]}"
+    else
+        ok "Tous les outils sont deja presents."
+    fi
 else
-    ok "Tous les outils sont deja presents."
+    PKGS_TO_INSTALL=()
+    command -v screen  &>/dev/null || PKGS_TO_INSTALL+=(screen)
+    command -v unzip   &>/dev/null || PKGS_TO_INSTALL+=(unzip)
+    command -v curl    &>/dev/null || PKGS_TO_INSTALL+=(curl)
+    command -v python3 &>/dev/null || PKGS_TO_INSTALL+=(python3)
+    if [ ${#PKGS_TO_INSTALL[@]} -gt 0 ]; then
+        sudo apt-get update -qq
+        sudo apt-get install -y "${PKGS_TO_INSTALL[@]}"
+        ok "Outils installes : ${PKGS_TO_INSTALL[*]}"
+    else
+        ok "Tous les outils sont deja presents."
+    fi
 fi
 
 # ════════════════════════════════════════════════════════════════
@@ -248,18 +318,29 @@ fi
 # ════════════════════════════════════════════════════════════════
 info "7/8  Playit.gg (tunnel pour tes potes)..."
 if [ ! -f "$PLAYIT_BIN" ]; then
+    # Choisir le bon binaire selon l'OS et l'architecture
+    if [ "$OS" = "Darwin" ]; then
+        if [ "$ARCH" = "arm64" ]; then
+            PLAYIT_RELEASE_NAME="playit-darwin-aarch64"
+        else
+            PLAYIT_RELEASE_NAME="playit-darwin-amd64"
+        fi
+    else
+        PLAYIT_RELEASE_NAME="playit-linux-amd64"
+    fi
+
     curl -fsSL -L \
-        "https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-linux-amd64" \
+        "https://github.com/playit-cloud/playit-agent/releases/latest/download/${PLAYIT_RELEASE_NAME}" \
         -o "$PLAYIT_BIN" \
         || {
             # Fallback version connue
             curl -fsSL -L \
-                "https://github.com/playit-cloud/playit-agent/releases/download/v0.15.0/playit-linux-amd64" \
+                "https://github.com/playit-cloud/playit-agent/releases/download/v0.15.0/${PLAYIT_RELEASE_NAME}" \
                 -o "$PLAYIT_BIN" \
                 || error "Impossible de telecharger Playit.gg"
         }
     chmod +x "$PLAYIT_BIN"
-    ok "Playit.gg telecharge."
+    ok "Playit.gg telecharge ($PLAYIT_RELEASE_NAME)."
 else
     ok "Playit.gg deja present."
 fi
@@ -299,5 +380,5 @@ echo -e "  Ouvre-le dans un navigateur, cree un compte gratuit,"
 echo -e "  puis ajoute un tunnel Minecraft Java sur le port 25565."
 echo -e "  Tes potes pourront alors rejoindre avec l'adresse Playit.gg !"
 echo ""
-echo -e "  ${BLUE}IP locale (meme reseau) :${NC} $(hostname -I 2>/dev/null | awk '{print $1}'):25565"
+echo -e "  ${BLUE}IP locale (meme reseau) :${NC} $(get_local_ip):25565"
 echo ""

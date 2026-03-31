@@ -241,7 +241,7 @@ public class WeeklyModule implements CoreModule, Listener {
         // Récompenses individuelles
         EconomyModule eco = plugin.getModule(EconomyModule.class);
         if (eco != null) {
-            eco.deposit(uuid, currentMission.rewardMoney);
+            eco.depositFromEarning(uuid, currentMission.rewardMoney);
         }
 
         plugin.getDatabaseManager().runAsync(conn -> {
@@ -277,7 +277,7 @@ public class WeeklyModule implements CoreModule, Listener {
         for (Player p : Bukkit.getOnlinePlayers()) {
             // Bonus x2
             if (eco != null) {
-                eco.deposit(p.getUniqueId(), currentMission.rewardMoney);
+                eco.depositFromEarning(p.getUniqueId(), currentMission.rewardMoney);
             }
         }
 
@@ -333,17 +333,43 @@ public class WeeklyModule implements CoreModule, Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        loadParticipation(uuid);
 
-        // Envoyer le livre si c'est une nouvelle connexion cette semaine
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (event.getPlayer().isOnline() && currentMission != null) {
-                WeeklyProgress prog = participations.get(uuid);
-                if (prog != null && prog.progress == 0 && !prog.completed) {
-                    sendMissionBook(event.getPlayer());
+        // Vérifier si le joueur a déjà une participation cette semaine
+        plugin.getDatabaseManager().executeAsync(conn -> {
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT progress, completed FROM weekly_participation WHERE uuid = ? AND week = ?")) {
+                ps.setString(1, uuid.toString());
+                ps.setString(2, currentWeek);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    // Entrée existante : charger et ne pas renvoyer le livre
+                    return new boolean[]{false, rs.getInt("completed") == 1};
                 }
+            } catch (java.sql.SQLException e) {
+                plugin.getLogger().warning("Erreur vérification weekly join: " + e.getMessage());
             }
-        }, 60L);
+            // Pas d'entrée → nouveau participant cette semaine
+            return new boolean[]{true, false};
+        }).thenAccept(result -> {
+            boolean isNewParticipant = result[0];
+            boolean isCompleted = result[1];
+
+            if (isNewParticipant) {
+                // Créer l'entrée et donner le livre
+                WeeklyProgress newProg = new WeeklyProgress(0, false);
+                participations.put(uuid, newProg);
+                saveParticipationAsync(uuid, newProg);
+
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    if (event.getPlayer().isOnline() && currentMission != null) {
+                        sendMissionBook(event.getPlayer());
+                    }
+                }, 60L);
+            } else {
+                // Charger la participation existante
+                loadParticipation(uuid);
+            }
+        });
     }
 
     // ─── Monday Reset ───────────────────────────────────────────

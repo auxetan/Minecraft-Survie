@@ -140,6 +140,15 @@ public class LeaderboardModule implements CoreModule, Listener {
         String job = data.getOrDefault("job", "NONE");
         String jobLevel = data.getOrDefault("job_level", "1");
 
+        ClassModule classModule = plugin.getModule(ClassModule.class);
+        String classDisplay = "Aucune";
+        if (classModule != null) {
+            String classId = classModule.getPlayerClassId(player.getUniqueId());
+            if (classId != null && !classId.equals("NONE")) {
+                classDisplay = classModule.getClassDisplayName(classId);
+            }
+        }
+
         QuestModule questModule = plugin.getModule(QuestModule.class);
         int questsDone = 0;
         int questsTotal = 0;
@@ -158,8 +167,9 @@ public class LeaderboardModule implements CoreModule, Listener {
             }
         }
 
-        setScore(obj, "§7", 7);
-        setScore(obj, "§7Argent: §e" + money + " ✦", 6);
+        setScore(obj, "§7", 8);
+        setScore(obj, "§7Argent: §e" + money + " ✦", 7);
+        setScore(obj, "§7Classe: §d" + classDisplay, 6);
         setScore(obj, "§7Job: §b" + formatJob(job) + " Niv." + jobLevel, 5);
         setScore(obj, "§7Quêtes: §a" + questsDone + "/" + questsTotal, 4);
         setScore(obj, "§7Semaine: " + weeklyStatus, 3);
@@ -303,19 +313,58 @@ public class LeaderboardModule implements CoreModule, Listener {
             }
         }
 
-        // Your Rank at slot 49 (48 in 0-indexed)
-        // TODO: Fetch current player's rank from DB
+        // Your Rank at slot 49 (48 in 0-indexed) — placeholder, updated async after open
         ItemStack yourRankItem = new ItemStack(Material.WRITABLE_BOOK);
         ItemMeta yourRankMeta = yourRankItem.getItemMeta();
         yourRankMeta.displayName(Component.text("§bVotre Classement"));
         yourRankMeta.lore(List.of(
                 Component.text("§7" + stat.displayName),
-                Component.text("§f#? - §e? points")
+                Component.text("§7Chargement...")
         ));
         yourRankItem.setItemMeta(yourRankMeta);
         gui.setItem(48, new GuiItem(yourRankItem));
 
         gui.open(player);
+        fetchAndUpdateRank(player, gui, stat);
+    }
+
+    private void fetchAndUpdateRank(Player player, Gui gui, StatDef stat) {
+        UUID uuid = player.getUniqueId();
+        plugin.getDatabaseManager().executeAsync(conn -> {
+            try (PreparedStatement ps1 = conn.prepareStatement(
+                    "SELECT " + stat.column + " FROM players WHERE uuid = ?")) {
+                ps1.setString(1, uuid.toString());
+                ResultSet rs1 = ps1.executeQuery();
+                if (rs1.next()) {
+                    int value = stat.column.equals("money_earned")
+                            ? (int) rs1.getDouble(stat.column)
+                            : rs1.getInt(stat.column);
+                    try (PreparedStatement ps2 = conn.prepareStatement(
+                            "SELECT COUNT(*) + 1 AS rank FROM players WHERE " + stat.column + " > ?")) {
+                        if (stat.column.equals("money_earned")) ps2.setDouble(1, rs1.getDouble(stat.column));
+                        else ps2.setInt(1, value);
+                        ResultSet rs2 = ps2.executeQuery();
+                        if (rs2.next()) return new int[]{rs2.getInt("rank"), value};
+                    }
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Rank query error: " + e.getMessage());
+            }
+            return new int[]{0, 0};
+        }).thenAccept(result -> {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (!player.isOnline()) return;
+                ItemStack rankItem = new ItemStack(Material.WRITABLE_BOOK);
+                ItemMeta meta = rankItem.getItemMeta();
+                meta.displayName(Component.text("§bVotre Classement"));
+                meta.lore(List.of(
+                        Component.text("§7" + stat.displayName),
+                        Component.text("§f#" + result[0] + " - §e" + result[1] + " points")
+                ));
+                rankItem.setItemMeta(meta);
+                gui.updateItem(48, new GuiItem(rankItem));
+            });
+        });
     }
 
     // ─── Events ─────────────────────────────────────────────────

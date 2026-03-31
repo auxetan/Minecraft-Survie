@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SurvivalCraft — Mods Recommandés</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&family=Inter:wght@400;500;600&display=swap');
+
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #0f3460;
+            --bg-card-hover: #1a4a7a;
+            --gold: #FFD700;
+            --gold-dark: #cc9900;
+            --emerald: #50C878;
+            --emerald-dark: #3da85f;
+            --aqua: #00bcd4;
+            --text-primary: #e8e8e8;
+            --text-muted: #9e9e9e;
+            --border: rgba(255, 215, 0, 0.2);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        /* ── Stars background ── */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                radial-gradient(1px 1px at 40% 10%, rgba(255,255,255,0.3) 0%, transparent 100%),
+                radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,0.5) 0%, transparent 100%),
+                radial-gradient(1px 1px at 90% 50%, rgba(255,255,255,0.2) 0%, transparent 100%),
+                radial-gradient(1px 1px at 20% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                radial-gradient(1px 1px at 55% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+                radial-gradient(1px 1px at 80% 85%, rgba(255,255,255,0.5) 0%, transparent 100%),
+                radial-gradient(2px 2px at 30% 45%, rgba(255,215,0,0.3) 0%, transparent 100%),
+                radial-gradient(2px 2px at 65% 60%, rgba(0,188,212,0.3) 0%, transparent 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Header ── */
+        header {
+            text-align: center;
+            padding: 3rem 1rem 2rem;
+        }
+
+        .server-badge {
+            display: inline-block;
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid var(--gold);
+            border-radius: 4px;
+            padding: 0.3rem 1rem;
+            font-family: 'VT323', monospace;
+            font-size: 1.1rem;
+            color: var(--gold);
+            letter-spacing: 0.1em;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(0.85rem, 3vw, 1.4rem);
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 2px 2px 0 #000;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            image-rendering: pixelated;
+        }
+
+        .subtitle {
+            font-family: 'VT323', monospace;
+            font-size: 1.4rem;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* ── Download All button ── */
+        .download-all-wrap {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .btn-download-all {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            color: #1a1a2e;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.65rem;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3), 0 2px 0 var(--gold-dark);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            text-decoration: none;
+        }
+
+        .btn-download-all:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5), 0 2px 0 var(--gold-dark);
+        }
+
+        .btn-download-all:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3), 0 0 0 var(--gold-dark);
+        }
+
+        .download-all-note {
+            margin-top: 0.6rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* ── Section title ── */
+        .section-title {
+            font-family: 'VT323', monospace;
+            font-size: 1.6rem;
+            color: var(--gold);
+            letter-spacing: 0.1em;
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ── Mods grid ── */
+        .mods-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 3rem;
+        }
+
+        /* ── Mod card ── */
+        .mod-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mod-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .mod-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 215, 0, 0.5);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.1);
+            background: var(--bg-card-hover);
+        }
+
+        .mod-card:hover::before {
+            opacity: 1;
+        }
+
+        .mod-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .mod-icon {
+            font-size: 2rem;
+            width: 2.5rem;
+            text-align: center;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        .mod-name {
+            font-family: 'VT323', monospace;
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            letter-spacing: 0.05em;
+        }
+
+        .mod-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .mod-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .tag-performance { background: rgba(80, 200, 120, 0.2); color: var(--emerald); border: 1px solid rgba(80,200,120,0.3); }
+        .tag-visual      { background: rgba(0, 188, 212, 0.2);  color: var(--aqua);   border: 1px solid rgba(0,188,212,0.3); }
+        .tag-minimap     { background: rgba(255, 215, 0, 0.2);  color: var(--gold);   border: 1px solid rgba(255,215,0,0.3); }
+        .tag-hud         { background: rgba(255, 100, 100, 0.2); color: #ff8080;      border: 1px solid rgba(255,100,100,0.3); }
+        .tag-utility     { background: rgba(170, 100, 255, 0.2); color: #cc88ff;      border: 1px solid rgba(170,100,255,0.3); }
+        .tag-required    { background: rgba(255, 165, 0, 0.2);  color: #ffaa00;      border: 1px solid rgba(255,165,0,0.3); }
+
+        .btn-download {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--emerald) 0%, var(--emerald-dark) 100%);
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            text-decoration: none;
+            text-align: center;
+            letter-spacing: 0.03em;
+            box-shadow: 0 2px 8px rgba(80, 200, 120, 0.3), 0 2px 0 var(--emerald-dark);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            align-self: flex-start;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(80, 200, 120, 0.5), 0 2px 0 var(--emerald-dark);
+        }
+
+        .btn-download:active {
+            transform: translateY(0);
+        }
+
+        /* Required mod — slightly different styling */
+        .mod-card.required {
+            border-color: rgba(255, 165, 0, 0.4);
+        }
+
+        .mod-card.required::after {
+            content: 'REQUIS';
+            position: absolute;
+            top: 0.6rem;
+            right: 0.6rem;
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: #ffaa00;
+            background: rgba(255, 165, 0, 0.15);
+            border: 1px solid rgba(255,165,0,0.4);
+            border-radius: 3px;
+            padding: 0.15rem 0.4rem;
+        }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            border-top: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+
+        .footer-logo {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 0.6rem;
+            color: var(--gold);
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-sub {
+            font-family: 'VT323', monospace;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-link {
+            color: var(--aqua);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            color: var(--text-muted);
+            margin: 0 0.5rem;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            h1 { font-size: 0.75rem; }
+            .mods-grid { grid-template-columns: 1fr; }
+            .btn-download-all { font-size: 0.55rem; padding: 0.9rem 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ── Header ── -->
+    <header>
+        <div class="server-badge">✦ SERVEUR PRIVÉ ✦</div>
+        <h1>SurvivalCraft<br>Mods Recommandés</h1>
+        <p class="subtitle">Ces mods sont optionnels mais améliorent grandement l'expérience !</p>
+    </header>
+
+    <!-- ── Download All ── -->
+    <div class="download-all-wrap">
+        <button class="btn-download-all" onclick="openAllDownloads()">⬇ TÉLÉCHARGER TOUS LES MODS</button>
+        <p class="download-all-note">Ouvre toutes les pages de téléchargement dans de nouveaux onglets</p>
+    </div>
+
+    <!-- ── Performance mods ── -->
+    <p class="section-title">⚡ Performance</p>
+    <div class="mods-grid">
+
+        <div class="mod-card">
+            <div class="mod-header">
+                <span class="mod-icon">⚡</span>
+                <span class="mod-name">Sodium</span>
+            </div>
+            <p class="mod-desc">Remplace le moteur de rendu de Minecraft. Multiplie les FPS par 2 à 3 selon ta machine. Indispensable si tu veux jouer sans saccades.</p>
+            <div class="mod-tags">
+                <span class="tag tag-performance">Performance</span>
+                <span class="tag tag-visual">Rendu</span>
+            </div>
+            <a class="btn-download" href="https://modrinth.com/mod/sodium" target="_blank" rel="noopener">Télécharger →</a>
+        </div>
+
+        <div class="mod-card">
+            <div class="mod-header">
+                <span class="mod-icon">💡</span>
+                <span class="mod-name">Lithium</span>
+            </div>
+            <p class="mod-desc">Optimise la logique interne du jeu (IA des mobs, physique, chunks). Améliore les TPS côté client et réduit les microcoupures.</p>
+            <div class="mod-tags">
+                <span class="tag tag-performance">Performance</span>
+            </div>
+            <a class="btn-download" href="https://modrinth.com/mod/lithium" target="_blank" rel="noopener">Télécharger →</a>
+        </div>
+
+        <div class="mod-card">
+            <div class="mod-header">
+                <span class="mod-icon">🌈</span>
+                <span class="mod-name">Iris Shaders</span>
+            </div>
+            <p class="mod-desc">Ajoute le support des shaderpacks en restant compatible avec Sodium. Rends le jeu magnifique sans sacrifier les performances.</p>
+            <div class="mod-tags">
+                <span class="tag tag-visual">Shaders</span>
+                <span class="tag tag-performance">Compatible Sodium</span>
+            </div>
+            <a class="btn-download" href="https://modrinth.com/mod/iris" target="_blank" rel="noopener">Télécharger →</a>
+        </div>
+
+    </div>
+
+    <!-- ── Navigation ── -->
+    <p class="section-title">🗺 Navigation</p>
+    <div class="mods-grid">
+
+        <div class="mod-card">
+            <div class="mod-header">
+                <span class="mod-icon">🧭</span>
+                <span class="mod-name">Xaero's Minimap</span>
+            </div>
+            <p class="mod-desc">Minimap en coin d'écran avec waypoints, marqueurs de joueurs et indicateur de direction. Compatible serveur sans plugin dédié.</p>
+            <div class="mod-tags">
+                <span class="tag tag-minimap">Minimap</span>
+                <span class="tag tag-utility">Waypoints</span>
+            </div>
+            <a class="btn-download" href="https://modrinth.com/mod/xaeros-minimap" target="_blank" rel="noopener">Télécharger →</a>
+        </div>
+
+        <div class="mod-card">
+            <div class="mod-header">
+                <span class="mod-icon">🗺</span>
+                <span class="mod-name">Xaero's World Map</span>
+            </div>
+            <p class="mod-desc">Carte du monde complète accessible via une touche. Cartographie automatiquement les zones visitées. Parfait en complément de la minimap.</p>
+            <div class="mod-tags">
+                <span class="tag tag-minimap">Carte monde</span>
+                <span class="tag tag-utility">Navigation</span>
+            </div>
+            <a class="btn-download" href="https://modrinth.com/mod/xaeros-world-map" target="_blank" rel="noopener">Télécharger →</a>
+        </div>
+
+    </div>
+
+    <!-- ── HUD & Info ── -->
+    <p class="section-title">📊 HUD &amp; Informations</p>
+    <div class="mods-grid">
+
+        <div class="mod-card">
+            <div class="mod-header">
+                <span class="mod-icon">🍎</span>
+                <span class="mod-name">AppleSkin</span>
+            </div>
+            <p class="mod-desc">Affiche la saturation et l'exhaustion de la faim en overlay. Tu peux enfin voir quand manger avant de perdre ta régénération !</p>
+            <div class="mod-tags">
+                <span class="tag tag-hud">HUD</span>
+                <span class="tag tag-utility">Nourriture</span>
+            </div>
+            <a class="btn-download" href="https://modrinth.com/mod/appleskin" target="_blank" rel="noopener">Télécharger →</a>
+        </div>
+
+    </div>
+
+    <!-- ── Fabric (required) ── -->
+    <p class="section-title">🔧 Infrastructure Fabric (requis)</p>
+    <div class="mods-grid">
+
+        <div class="mod-card required">
+            <div class="mod-header">
+                <span class="mod-icon">🔗</span>
+                <span class="mod-name">Fabric API</span>
+            </div>
+            <p class="mod-desc">Bibliothèque de base requise par la grande majorité des mods Fabric. À installer en premier, avant tous les autres mods.</p>
+            <div class="mod-tags">
+                <span class="tag tag-required">Requis</span>
+                <span class="tag tag-utility">API</span>
+            </div>
+            <a class="btn-download" href="https://modrinth.com/mod/fabric-api" target="_blank" rel="noopener">Télécharger →</a>
+        </div>
+
+        <div class="mod-card required">
+            <div class="mod-header">
+                <span class="mod-icon">⚙</span>
+                <span class="mod-name">Fabric Loader</span>
+            </div>
+            <p class="mod-desc">Le chargeur de mods Fabric lui-même. À installer via l'installeur officiel avant tout. Choisir la même version que le serveur.</p>
+            <div class="mod-tags">
+                <span class="tag tag-required">Requis</span>
+            </div>
+            <a class="btn-download" href="https://fabricmc.net/use/installer/" target="_blank" rel="noopener">Télécharger →</a>
+        </div>
+
+        <div class="mod-card">
+            <div class="mod-header">
+                <span class="mod-icon">📋</span>
+                <span class="mod-name">Mod Menu</span>
+            </div>
+            <p class="mod-desc">Ajoute un menu in-game pour gérer tes mods Fabric, voir leurs versions et accéder à leurs configs. Pratique mais pas obligatoire.</p>
+            <div class="mod-tags">
+                <span class="tag tag-utility">Gestion mods</span>
+            </div>
+            <a class="btn-download" href="https://modrinth.com/mod/modmenu" target="_blank" rel="noopener">Télécharger →</a>
+        </div>
+
+    </div>
+
+</div><!-- /container -->
+
+<!-- ── Footer ── -->
+<footer>
+    <div class="footer-logo">✦ SurvivalCraft ✦</div>
+    <p class="footer-sub">Serveur privé entre potes</p>
+    <p>
+        <a class="footer-link" href="#" title="Carte du monde en ligne (BlueMap - à configurer)">🗺 Carte du monde</a>
+        <span class="divider">|</span>
+        <a class="footer-link" href="https://fabricmc.net/" target="_blank" rel="noopener">fabricmc.net</a>
+        <span class="divider">|</span>
+        <a class="footer-link" href="https://modrinth.com/" target="_blank" rel="noopener">modrinth.com</a>
+    </p>
+</footer>
+
+<script>
+    const MOD_URLS = [
+        "https://modrinth.com/mod/sodium",
+        "https://modrinth.com/mod/iris",
+        "https://modrinth.com/mod/lithium",
+        "https://modrinth.com/mod/xaeros-minimap",
+        "https://modrinth.com/mod/xaeros-world-map",
+        "https://modrinth.com/mod/appleskin",
+        "https://modrinth.com/mod/modmenu",
+        "https://modrinth.com/mod/fabric-api",
+        "https://fabricmc.net/use/installer/"
+    ];
+
+    function openAllDownloads() {
+        const blocked = [];
+        MOD_URLS.forEach((url, i) => {
+            // Small delay between windows to avoid pop-up blockers
+            setTimeout(() => {
+                const w = window.open(url, '_blank', 'noopener,noreferrer');
+                if (!w) blocked.push(url);
+            }, i * 150);
+        });
+        setTimeout(() => {
+            if (blocked.length > 0) {
+                alert(
+                    "Ton navigateur a bloqué " + blocked.length + " onglet(s).\n" +
+                    "Autorise les pop-ups pour cette page et réessaie, ou clique sur\n" +
+                    "chaque bouton 'Télécharger' individuellement."
+                );
+            }
+        }, MOD_URLS.length * 150 + 500);
+    }
+</script>
+</body>
+</html>

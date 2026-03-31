@@ -78,5 +78,76 @@ categories:
       TRIDENT: { buy: 1000.0, sell: 0, stock: 2 }
       NETHER_STAR: { buy: 1500.0, sell: 0, stock: 1 }
 
+  redstone:
+    display-name: "&c⚡ Redstone"
+    icon: REDSTONE
+    slot: 13
+    items:
+      REPEATER:          { buy: 4.0,   sell: 1.5  }
+      COMPARATOR:        { buy: 6.0,   sell: 2.0  }
+      OBSERVER:          { buy: 8.0,   sell: 3.0  }
+      PISTON:            { buy: 5.0,   sell: 2.0  }
+      STICKY_PISTON:     { buy: 7.0,   sell: 2.5  }
+      REDSTONE:          { buy: 2.0,   sell: 0.5  }
+      REDSTONE_TORCH:    { buy: 1.0,   sell: 0.3  }
+      HOPPER:            { buy: 12.0,  sell: 4.0  }
+      DROPPER:           { buy: 3.0,   sell: 1.0  }
+      DISPENSER:         { buy: 5.0,   sell: 1.5  }
+      LEVER:             { buy: 0.5,   sell: 0.1  }
+      STONE_BUTTON:      { buy: 0.5,   sell: 0.1  }
+      TRIPWIRE_HOOK:     { buy: 2.0,   sell: 0.5  }
+      DAYLIGHT_DETECTOR: { buy: 6.0,   sell: 2.0  }
+      TRAPPED_CHEST:     { buy: 4.0,   sell: 1.5  }
+
+  decorations:
+    display-name: "&b🏠 Décorations"
+    icon: LANTERN
+    slot: 15
+    items:
+      GLASS:                  { buy: 1.5,  sell: 0.4  }
+      WHITE_STAINED_GLASS:    { buy: 2.0,  sell: 0.5  }
+      LIGHT_BLUE_STAINED_GLASS: { buy: 2.0, sell: 0.5 }
+      YELLOW_STAINED_GLASS:   { buy: 2.0,  sell: 0.5  }
+      RED_STAINED_GLASS:      { buy: 2.0,  sell: 0.5  }
+      GREEN_STAINED_GLASS:    { buy: 2.0,  sell: 0.5  }
+      BLACK_STAINED_GLASS:    { buy: 2.0,  sell: 0.5  }
+      WHITE_TERRACOTTA:       { buy: 2.0,  sell: 0.5  }
+      ORANGE_TERRACOTTA:      { buy: 2.0,  sell: 0.5  }
+      CYAN_TERRACOTTA:        { buy: 2.0,  sell: 0.5  }
+      WHITE_CONCRETE:         { buy: 3.0,  sell: 0.8  }
+      ORANGE_CONCRETE:        { buy: 3.0,  sell: 0.8  }
+      CYAN_CONCRETE:          { buy: 3.0,  sell: 0.8  }
+      LANTERN:                { buy: 4.0,  sell: 1.5  }
+      SOUL_LANTERN:           { buy: 5.0,  sell: 2.0  }
+      CHAIN:                  { buy: 3.0,  sell: 1.0  }
+      WHITE_CANDLE:           { buy: 2.5,  sell: 0.8  }
+      FLOWER_POT:             { buy: 2.0,  sell: 0.5  }
+      PAINTING:               { buy: 3.0,  sell: 1.0  }
+      ITEM_FRAME:             { buy: 3.0,  sell: 1.0  }
+      GLOW_ITEM_FRAME:        { buy: 8.0,  sell: 3.0  }
+      BELL:                   { buy: 15.0, sell: 5.0  }
+      SCAFFOLDING:            { buy: 1.0,  sell: 0.2  }
+
+  misc:
+    display-name: "&7📦 Divers"
+    icon: NAME_TAG
+    slot: 17
+    items:
+      NAME_TAG:         { buy: 20.0,  sell: 8.0  }
+      SADDLE:           { buy: 25.0,  sell: 10.0 }
+      LEAD:             { buy: 8.0,   sell: 3.0  }
+      BOOK:             { buy: 2.0,   sell: 0.5  }
+      PAPER:            { buy: 0.5,   sell: 0.1  }
+      MAP:              { buy: 3.0,   sell: 1.0  }
+      FIREWORK_ROCKET:  { buy: 3.0,   sell: 1.0  }
+      ENDER_PEARL:      { buy: 10.0,  sell: 4.0  }
+      ENDER_EYE:        { buy: 15.0,  sell: 6.0  }
+      COMPASS:          { buy: 5.0,   sell: 1.5  }
+      CLOCK:            { buy: 8.0,   sell: 2.5  }
+      SPYGLASS:         { buy: 20.0,  sell: 8.0  }
+      BUNDLE:           { buy: 12.0,  sell: 4.0  }
+      SHULKER_BOX:      { buy: 50.0,  sell: 20.0 }
+      TURTLE_EGG:       { buy: 30.0,  sell: 12.0 }
+
 # Taxe marché joueur
 market-tax: 0.05

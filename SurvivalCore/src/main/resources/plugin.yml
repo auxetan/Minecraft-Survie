@@ -55,6 +55,13 @@ commands:
     description: Protéger un chunk (système de claim)
     permission: survival.claim
     usage: /claim [info|list|unclaim|add <joueur>|remove <joueur>]
+  ah:
+    description: Hôtel des enchères
+    usage: /ah [sell <prix> [durée]]
+    permission: survival.auction
+  mods:
+    description: Affiche le lien vers la page de téléchargement des mods
+    permission: survival.mods
   admin:
     description: Commandes admin SurvivalCore
     permission: survival.admin
@@ -84,6 +91,10 @@ permissions:
   survival.waypoint:
     default: true
   survival.claim:
+    default: true
+  survival.auction:
+    default: true
+  survival.mods:
     default: true
   survival.admin:
     default: op

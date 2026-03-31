@@ -16,7 +16,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -24,6 +27,7 @@ import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Base64;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -52,6 +56,10 @@ public class ShopModule implements CoreModule, Listener {
     private final Map<UUID, Long> lastContribution = new ConcurrentHashMap<>();
     // Market tax
     private double marketTax;
+    // Coffre commun partagé (inventaire réel Bukkit)
+    private Inventory commonChestInventory;
+    // Dynamic pricing — ventes quotidiennes par item : material_name → volume
+    private final Map<String, java.util.concurrent.atomic.AtomicInteger> dailySellVolume = new ConcurrentHashMap<>();
 
     @Override
     public void onEnable(SurvivalCore plugin) {
@@ -60,6 +68,10 @@ public class ShopModule implements CoreModule, Listener {
 
         // Charger le fonds commun depuis la DB
         loadCommonFund();
+
+        // Créer et charger le coffre commun partagé
+        commonChestInventory = Bukkit.createInventory(null, 27, "§8✦ §aCoffre Commun §8✦");
+        loadCommonChestContents();
 
         // Commandes
         plugin.getCommand("shop").setExecutor(new ShopCommand());
@@ -72,6 +84,9 @@ public class ShopModule implements CoreModule, Listener {
         // Reset stock légendaires chaque lundi
         scheduleLegendaryReset();
 
+        // Reset prix dynamiques chaque minuit
+        scheduleDailyVolumeReset();
+
         plugin.getLogger().info("Shop module enabled — " + categories.size() + " catégories.");
     }
 
@@ -80,6 +95,8 @@ public class ShopModule implements CoreModule, Listener {
         // Persister le fonds commun dans config.yml
         plugin.getConfig().set("common-fund-balance", commonFund);
         plugin.saveConfig();
+        // Persister le coffre commun en DB
+        saveCommonChestContentsSync();
         plugin.getLogger().info("Shop module disabled. Fonds commun sauvegardé : " + commonFund);
     }
 
@@ -202,7 +219,15 @@ public class ShopModule implements CoreModule, Listener {
 
             List<Component> lore = new ArrayList<>();
             if (shopItem.buyPrice > 0) lore.add(Component.text("§7Acheter : §6" + shopItem.buyPrice + " ✦"));
-            if (shopItem.sellPrice > 0) lore.add(Component.text("§7Vendre : §e" + shopItem.sellPrice + " ✦"));
+            if (shopItem.sellPrice > 0) {
+                double effectiveSell = getEffectiveSellPrice(shopItem);
+                if (effectiveSell < shopItem.sellPrice) {
+                    lore.add(Component.text("§7Vendre : §e" + String.format("%.2f", effectiveSell)
+                            + " ✦ §8(base " + shopItem.sellPrice + ")"));
+                } else {
+                    lore.add(Component.text("§7Vendre : §e" + shopItem.sellPrice + " ✦"));
+                }
+            }
             if (shopItem.stock > 0 && category.isLegendary) {
                 int remaining = legendaryStock.getOrDefault(shopItem.material.name(), 0);
                 lore.add(Component.text("§cStock : " + remaining + " restant(s)"));
@@ -303,12 +328,34 @@ public class ShopModule implements CoreModule, Listener {
             return;
         }
 
+        // Prix dynamique : chaque vente réduit le prix de 2%, plancher à 50%
+        double effectivePrice = getEffectiveSellPrice(item);
+
+        // Incrémenter le volume quotidien
+        dailySellVolume.computeIfAbsent(item.material.name(),
+                k -> new java.util.concurrent.atomic.AtomicInteger(0)).incrementAndGet();
+
         // Retirer 1 item
         player.getInventory().removeItem(new ItemStack(item.material, 1));
-        eco.deposit(player.getUniqueId(), item.sellPrice);
+        eco.depositFromEarning(player.getUniqueId(), effectivePrice);
 
-        player.sendMessage("§e✦ Vendu §f" + formatItemName(item.material.name()) + " §epour §6" + eco.formatMoney(item.sellPrice));
+        String msg = "§e✦ Vendu §f" + formatItemName(item.material.name()) + " §epour §6" + eco.formatMoney(effectivePrice);
+        if (effectivePrice < item.sellPrice) {
+            msg += " §8(prix réduit — marché saturé)";
+        }
+        player.sendMessage(msg);
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 0.8f);
+    }
+
+    /**
+     * Calcule le prix de vente effectif en tenant compte du volume quotidien.
+     * Formule : basePrice * max(0.5, 1.0 - volume * 0.02)
+     */
+    private double getEffectiveSellPrice(ShopItem item) {
+        int volume = dailySellVolume.getOrDefault(item.material.name(),
+                new java.util.concurrent.atomic.AtomicInteger(0)).get();
+        double factor = Math.max(0.5, 1.0 - volume * 0.02);
+        return Math.round(item.sellPrice * factor * 100.0) / 100.0;
     }
 
     // ─── Marché Joueur ──────────────────────────────────────────
@@ -353,13 +400,13 @@ public class ShopModule implements CoreModule, Listener {
 
         for (MarketListing listing : listings) {
             try {
-                Material mat = Material.valueOf(listing.itemSerialized);
+                ItemStack displayItem = ItemStack.deserializeBytes(Base64.getDecoder().decode(listing.itemSerialized));
                 String sellerName = Bukkit.getOfflinePlayer(UUID.fromString(listing.sellerUuid)).getName();
                 if (sellerName == null) sellerName = "Inconnu";
 
                 String finalSellerName = sellerName;
-                GuiItem item = ItemBuilder.from(mat)
-                        .name(Component.text("§f" + formatItemName(mat.name())))
+                ItemStack finalDisplayItem = displayItem;
+                GuiItem item = ItemBuilder.from(displayItem)
                         .lore(
                                 Component.text("§7Vendeur : §e" + finalSellerName),
                                 Component.text("§7Prix : §6" + listing.price + " ✦"),
@@ -368,7 +415,7 @@ public class ShopModule implements CoreModule, Listener {
                                 Component.text("§aClic pour acheter")
                         )
                         .asGuiItem(event -> {
-                            buyFromMarket(player, listing, mat);
+                            buyFromMarket(player, listing, finalDisplayItem);
                         });
                 gui.addItem(item);
             } catch (Exception ignored) {
@@ -384,7 +431,7 @@ public class ShopModule implements CoreModule, Listener {
         gui.open(player);
     }
 
-    private void buyFromMarket(Player player, MarketListing listing, Material mat) {
+    private void buyFromMarket(Player player, MarketListing listing, ItemStack itemToGive) {
         EconomyModule eco = plugin.getModule(EconomyModule.class);
         if (eco == null) return;
 
@@ -393,8 +440,10 @@ public class ShopModule implements CoreModule, Listener {
             return;
         }
 
-        // Donner l'item
-        player.getInventory().addItem(new ItemStack(mat));
+        // Donner l'item avec tous ses enchantements et données NBT
+        ItemStack toGive = itemToGive.clone();
+        toGive.setAmount(1);
+        player.getInventory().addItem(toGive);
 
         // Taxe : 5% va au fonds commun, le reste au vendeur
         double tax = listing.price * marketTax;
@@ -427,48 +476,140 @@ public class ShopModule implements CoreModule, Listener {
     // ─── Coffre Commun ──────────────────────────────────────────
 
     public void openCommonChest(Player player) {
+        player.openInventory(commonChestInventory);
+    }
+
+    private boolean canWithdrawFromChest(UUID uuid) {
+        Long lastContrib = lastContribution.get(uuid);
+        return lastContrib != null && (System.currentTimeMillis() - lastContrib) < (24L * 60 * 60 * 1000);
+    }
+
+    @EventHandler
+    public void onCommonChestClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (!isCommonChestInventory(event.getInventory()) && !isCommonChestInventory(event.getClickedInventory())) return;
+
         UUID uuid = player.getUniqueId();
 
-        Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §aCoffre Commun §8✦ §7Fonds: §6" + String.format("%.0f", commonFund) + " ✦"))
-                .rows(4)
-                .create();
+        // Dépôt toujours autorisé (click dans l'inventaire du joueur vers le coffre)
+        // Retrait bloqué si pas contribué dans les 24h
+        boolean clickInChest = isCommonChestInventory(event.getClickedInventory());
+        boolean isShiftFromPlayer = event.isShiftClick() && !clickInChest;
 
-        // Note: le coffre commun est un inventaire partagé simple
-        // On ne bloque que le retrait si le joueur n'a pas contribué dans les 24h
-        // Pour simplifier, on utilise un GUI TriumphGUI avec des restrictions
+        if (clickInChest || isShiftFromPlayer) {
+            // Déterminer si c'est un retrait ou un dépôt
+            boolean isWithdraw;
+            if (isShiftFromPlayer) {
+                // Shift-click depuis l'inventaire joueur = dépôt → toujours autorisé
+                isWithdraw = false;
+            } else {
+                // Click dans le coffre : si le joueur prend un item (cursor vide ou pickup), c'est un retrait
+                org.bukkit.event.inventory.ClickType clickType = event.getClick();
+                isWithdraw = event.getCurrentItem() != null
+                        && event.getCurrentItem().getType() != Material.AIR
+                        && (clickType == org.bukkit.event.inventory.ClickType.LEFT
+                                || clickType == org.bukkit.event.inventory.ClickType.RIGHT
+                                || clickType == org.bukkit.event.inventory.ClickType.NUMBER_KEY
+                                || clickType == org.bukkit.event.inventory.ClickType.DROP
+                                || clickType == org.bukkit.event.inventory.ClickType.SHIFT_LEFT
+                                || clickType == org.bukkit.event.inventory.ClickType.SHIFT_RIGHT);
+            }
 
-        GuiItem info = ItemBuilder.from(Material.GOLD_BLOCK)
-                .name(Component.text("§6§l✦ Fonds Commun"))
-                .lore(
-                        Component.text("§7Total : §6" + String.format("%.0f", commonFund) + " ✦"),
-                        Component.text("§7Alimenté par 5% de chaque gain"),
-                        Component.text(""),
-                        Component.text("§eRègle : tu dois avoir contribué"),
-                        Component.text("§edans les 24h pour retirer des items")
-                )
-                .asGuiItem();
-        gui.setItem(4, info);
-
-        // Vérification contribution 24h
-        Long lastContrib = lastContribution.get(uuid);
-        boolean canWithdraw = lastContrib != null
-                && (System.currentTimeMillis() - lastContrib) < (24 * 60 * 60 * 1000);
-
-        GuiItem statusItem;
-        if (canWithdraw) {
-            statusItem = ItemBuilder.from(Material.LIME_DYE)
-                    .name(Component.text("§a✓ Tu peux déposer et retirer"))
-                    .asGuiItem();
-        } else {
-            statusItem = ItemBuilder.from(Material.RED_DYE)
-                    .name(Component.text("§c✗ Retrait bloqué"))
-                    .lore(Component.text("§7Complète un job ou une quête pour débloquer"))
-                    .asGuiItem();
+            if (isWithdraw && !canWithdrawFromChest(uuid)) {
+                event.setCancelled(true);
+                player.sendMessage("§c✗ Retrait bloqué ! Tu dois avoir contribué (job/quête) dans les 24h.");
+            }
         }
-        gui.setItem(22, statusItem);
 
-        gui.open(player);
+        // Sauvegarder le contenu après chaque interaction avec le coffre
+        if (!event.isCancelled()) {
+            Bukkit.getScheduler().runTask(plugin, this::saveCommonChestContentsAsync);
+        }
+    }
+
+    @EventHandler
+    public void onCommonChestClose(InventoryCloseEvent event) {
+        if (isCommonChestInventory(event.getInventory())) {
+            saveCommonChestContentsAsync();
+        }
+    }
+
+    private boolean isCommonChestInventory(Inventory inv) {
+        return inv != null && inv.equals(commonChestInventory);
+    }
+
+    private void loadCommonChestContents() {
+        plugin.getDatabaseManager().executeAsync(conn -> {
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                    "SELECT contents FROM common_chest WHERE id = 1")) {
+                java.sql.ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    String encoded = rs.getString("contents");
+                    if (encoded != null && !encoded.isEmpty()) {
+                        return encoded;
+                    }
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Erreur chargement coffre commun: " + e.getMessage());
+            }
+            return null;
+        }).thenAccept(encoded -> {
+            if (encoded == null) return;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                try {
+                    String[] parts = encoded.split(";", -1);
+                    for (int i = 0; i < parts.length && i < commonChestInventory.getSize(); i++) {
+                        if (!parts[i].isEmpty()) {
+                            byte[] bytes = Base64.getDecoder().decode(parts[i]);
+                            commonChestInventory.setItem(i, ItemStack.deserializeBytes(bytes));
+                        }
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Erreur désérialisation coffre commun: " + e.getMessage());
+                }
+            });
+        });
+    }
+
+    private String serializeChestContents() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < commonChestInventory.getSize(); i++) {
+            if (i > 0) sb.append(";");
+            ItemStack item = commonChestInventory.getItem(i);
+            if (item != null && item.getType() != Material.AIR) {
+                sb.append(Base64.getEncoder().encodeToString(item.serializeAsBytes()));
+            }
+        }
+        return sb.toString();
+    }
+
+    private void saveCommonChestContentsAsync() {
+        String encoded = serializeChestContents();
+        plugin.getDatabaseManager().runAsync(conn -> {
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                    "INSERT OR REPLACE INTO common_chest (id, contents) VALUES (1, ?)")) {
+                ps.setString(1, encoded);
+                ps.executeUpdate();
+            } catch (Exception e) {
+                plugin.getLogger().warning("Erreur sauvegarde coffre commun: " + e.getMessage());
+            }
+        });
+    }
+
+    private void saveCommonChestContentsSync() {
+        String encoded = serializeChestContents();
+        try {
+            var conn = plugin.getDatabaseManager().getConnection();
+            if (conn != null && !conn.isClosed()) {
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                        "INSERT OR REPLACE INTO common_chest (id, contents) VALUES (1, ?)")) {
+                    ps.setString(1, encoded);
+                    ps.executeUpdate();
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Erreur sauvegarde sync coffre commun: " + e.getMessage());
+        }
     }
 
     // ─── Reset Légendaire hebdo ─────────────────────────────────
@@ -500,6 +641,23 @@ public class ShopModule implements CoreModule, Listener {
             }
         }
         plugin.getLogger().info("Stock légendaire réinitialisé.");
+    }
+
+    // ─── Dynamic pricing reset ──────────────────────────────────
+
+    private void scheduleDailyVolumeReset() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime midnight = now.toLocalDate().plusDays(1).atTime(LocalTime.MIDNIGHT);
+        long seconds = ChronoUnit.SECONDS.between(now, midnight);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                dailySellVolume.clear();
+                plugin.getLogger().fine("Shop: volumes de vente quotidiens réinitialisés.");
+                scheduleDailyVolumeReset();
+            }
+        }.runTaskLater(plugin, Math.max(20L, seconds * 20L));
     }
 
     // ─── Common Fund persistence ────────────────────────────────
@@ -564,8 +722,8 @@ public class ShopModule implements CoreModule, Listener {
                 return true;
             }
 
-            // Sérialiser comme nom du matériau (simplifié)
-            String serialized = itemInHand.getType().name();
+            // Sérialiser l'item complet (enchantements, nom, NBT) en Base64
+            String serialized = Base64.getEncoder().encodeToString(itemInHand.serializeAsBytes());
 
             // Retirer 1 item de la main
             if (itemInHand.getAmount() > 1) {

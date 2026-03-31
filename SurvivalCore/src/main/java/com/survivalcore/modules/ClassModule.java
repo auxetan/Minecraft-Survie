@@ -19,6 +19,7 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -43,7 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClassModule implements CoreModule, Listener {
 
     private SurvivalCore plugin;
-    private NamespacedKey grimoireKey;
+    /** Public static pour permettre aux autres modules (ex: DeathModule) de vérifier le grimoire. */
+    public static NamespacedKey grimoireKey;
 
     // Cache joueur → données de classe
     private final Map<UUID, ClassData> playerClasses = new ConcurrentHashMap<>();
@@ -122,6 +124,16 @@ public class ClassModule implements CoreModule, Listener {
         meta.getPersistentDataContainer().set(grimoireKey, PersistentDataType.BYTE, (byte) 1);
         item.setItemMeta(meta);
         return item;
+    }
+
+    /**
+     * Vérifie si un ItemStack est un Grimoire de Classe (via PDC).
+     * Utilisable statiquement dès que grimoireKey est initialisé.
+     */
+    public static boolean isGrimoire(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return false;
+        if (grimoireKey == null) return false;
+        return item.getItemMeta().getPersistentDataContainer().has(grimoireKey, PersistentDataType.BYTE);
     }
 
     // ─── Capacités Passives ─────────────────────────────────────
@@ -629,6 +641,36 @@ public class ClassModule implements CoreModule, Listener {
         if (data != null) savePlayerClassAsync(uuid, data);
         cooldowns.remove(uuid);
         eagleEyeActive.remove(uuid);
+    }
+
+    @EventHandler
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+
+        // Vérifier si le joueur a une classe active
+        String classId = getPlayerClassId(uuid);
+        if (classId.equals("NONE")) return;
+
+        // Redonner le grimoire 1 tick après le respawn (l'inventaire est réinitialisé pendant l'event)
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) return;
+            // Vérifier si le joueur a déjà un grimoire
+            boolean hasGrimoire = false;
+            for (ItemStack item : player.getInventory().getContents()) {
+                if (ClassModule.isGrimoire(item)) {
+                    hasGrimoire = true;
+                    break;
+                }
+            }
+            if (!hasGrimoire) {
+                Map<Integer, ItemStack> overflow = player.getInventory().addItem(createGrimoire());
+                for (ItemStack leftover : overflow.values()) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+                }
+                player.sendMessage("§7Ton §dGrimoire de Classe §7a été restauré.");
+            }
+        }, 1L);
     }
 
     // ─── Persistance ────────────────────────────────────────────

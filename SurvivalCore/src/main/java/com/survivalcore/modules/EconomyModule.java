@@ -83,14 +83,29 @@ public class EconomyModule implements CoreModule, Listener {
         saveBalanceAsync(uuid, amount);
     }
 
+    /**
+     * Crédite le compte d'un joueur sans effet secondaire.
+     * À utiliser pour les transferts joueur→joueur (/pay), les achats de marché (portion vendeur)
+     * et les commandes admin givemoney — aucune monnaie n'est créée.
+     */
     public void deposit(UUID uuid, double amount) {
+        double newBalance = getBalance(uuid) + amount;
+        setBalance(uuid, newBalance);
+    }
+
+    /**
+     * Crédite le compte d'un joueur suite à un gain réel (job, quête, récompense hebdo,
+     * vente à la boutique admin). Applique la taxe de 5 % au fonds commun et
+     * met à jour le compteur money_earned.
+     */
+    public void depositFromEarning(UUID uuid, double amount) {
         double newBalance = getBalance(uuid) + amount;
         setBalance(uuid, newBalance);
 
         // 5% du gain va au fonds commun (spec : tax auto sur chaque gain)
         ShopModule shop = plugin.getModule(ShopModule.class);
         if (shop != null) {
-            shop.addToCommonFund(amount);
+            shop.addToCommonFund(amount * 0.05);
         }
 
         // Mettre à jour money_earned en async

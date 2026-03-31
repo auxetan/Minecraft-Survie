@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ================================================================
 #  start.sh — Demarre le serveur SurvivalCraft + Playit.gg
-#  Usage : ./start.sh
+#  Usage : ./start.sh [--dev]
 #
 #  Le serveur Minecraft tourne dans   : screen -r minecraft
 #  Le tunnel Playit.gg tourne dans    : screen -r playit
@@ -9,12 +9,26 @@
 # ================================================================
 set -euo pipefail
 
+# ── Detection OS / Architecture ─────────────────────────────────
+OS="$(uname -s)"
+ARCH="$(uname -m)"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVER_DIR="$SCRIPT_DIR/server"
 PLUGIN_DIR="$SERVER_DIR/plugins"
 SCREEN_MC="minecraft"
 SCREEN_PLAYIT="playit"
-PLAYIT_BIN="$SCRIPT_DIR/playit-linux-amd64"
+
+# ── Playit binary — dynamique selon OS+ARCH ─────────────────────
+if [ "$OS" = "Darwin" ]; then
+    if [ "$ARCH" = "arm64" ]; then
+        PLAYIT_BIN="$SCRIPT_DIR/playit-darwin-aarch64"
+    else
+        PLAYIT_BIN="$SCRIPT_DIR/playit-darwin-amd64"
+    fi
+else
+    PLAYIT_BIN="$SCRIPT_DIR/playit-linux-amd64"
+fi
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; CYAN='\033[0;36m'; NC='\033[0m'
 info()  { echo -e "${BLUE}[INFO]${NC}  $*"; }
@@ -28,12 +42,40 @@ command -v screen &>/dev/null || error "screen non trouve. Lance d'abord : ./set
 [ -f "$SERVER_DIR/paper-1.21.4.jar" ] || error "PaperMC non trouve. Lance d'abord : ./setup.sh"
 
 # ── Java 21 ─────────────────────────────────────────────────────
-if [ -d "/usr/lib/jvm/java-21-openjdk-amd64" ]; then
-    export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
-    export PATH="$JAVA_HOME/bin:$PATH"
+if [ "$OS" = "Darwin" ]; then
+    JAVA_HOME_DETECTED="$(/usr/libexec/java_home 2>/dev/null || true)"
+    if [ -z "$JAVA_HOME_DETECTED" ] && command -v brew &>/dev/null; then
+        # Essayer les chemins brew courants
+        for candidate in \
+            "$(brew --prefix openjdk@21 2>/dev/null)/libexec/openjdk.jdk/Contents/Home" \
+            "$(brew --prefix)/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"; do
+            if [ -d "$candidate" ]; then
+                JAVA_HOME_DETECTED="$candidate"
+                break
+            fi
+        done
+    fi
+    if [ -n "$JAVA_HOME_DETECTED" ]; then
+        export JAVA_HOME="$JAVA_HOME_DETECTED"
+        export PATH="$JAVA_HOME/bin:$PATH"
+    fi
+else
+    if [ -d "/usr/lib/jvm/java-21-openjdk-amd64" ]; then
+        export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+        export PATH="$JAVA_HOME/bin:$PATH"
+    fi
 fi
+
 JAVA_VER=$(java -version 2>&1 | awk -F '"' '/version/{print $2}' | cut -d'.' -f1)
 [[ "$JAVA_VER" -ge 21 ]] || error "Java 21+ requis (detecte : $JAVA_VER)."
+
+# ── RAM allocation — --dev flag ou macOS = 2G, sinon 4G ─────────
+if [ "${1:-}" = "--dev" ] || [ "$OS" = "Darwin" ]; then
+    RAM="2G"
+    info "Mode dev / macOS : RAM limitee a 2G."
+else
+    RAM="4G"
+fi
 
 # ── Serveur deja en cours ? ─────────────────────────────────────
 if screen -list 2>/dev/null | grep -q "$SCREEN_MC"; then
@@ -48,7 +90,7 @@ fi
 echo ""
 info "Build du plugin SurvivalCore..."
 cd "$SCRIPT_DIR/SurvivalCore"
-JAVA_HOME="$JAVA_HOME" ./gradlew shadowJar --no-daemon 2>&1 \
+JAVA_HOME="${JAVA_HOME:-}" ./gradlew shadowJar --no-daemon 2>&1 \
     || { warn "Build echoue — demarrage avec l'ancien JAR."; }
 
 PLUGIN_JAR=$(ls "$SCRIPT_DIR/SurvivalCore/build/libs/"SurvivalCore-*.jar 2>/dev/null | grep -v sources | head -1)
@@ -64,10 +106,10 @@ echo -e "${GREEN}║   Demarrage de SurvivalCraft...                      ║${N
 echo -e "${GREEN}╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# Flags JVM Aikar — optimises pour Intel N100 (4 coeurs, 8 Go RAM)
+# Flags JVM Aikar — adaptes a la RAM disponible
 JVM_FLAGS=(
-    "-Xms4G"
-    "-Xmx4G"
+    "-Xms${RAM}"
+    "-Xmx${RAM}"
     "-XX:+UseG1GC"
     "-XX:+ParallelRefProcEnabled"
     "-XX:MaxGCPauseMillis=200"
@@ -122,6 +164,13 @@ else
     warn "Sans Playit.gg, seuls les joueurs sur ton reseau local peuvent rejoindre."
 fi
 
+# ── IP locale (portable) ─────────────────────────────────────────
+if [ "$OS" = "Darwin" ]; then
+    LOCAL_IP="$(ipconfig getifaddr en0 2>/dev/null || echo "localhost")"
+else
+    LOCAL_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+fi
+
 # ── Resume ──────────────────────────────────────────────────────
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════════════════╗${NC}"
@@ -136,7 +185,7 @@ echo -e "    Tout arreter       : ${YELLOW}./stop.sh${NC}"
 echo -e "    Rebuild le plugin  : ${YELLOW}./build.sh${NC}"
 echo ""
 echo -e "  ${CYAN}Connexion :${NC}"
-echo -e "    Reseau local : ${BLUE}$(hostname -I 2>/dev/null | awk '{print $1}'):25565${NC}"
+echo -e "    Reseau local : ${BLUE}${LOCAL_IP}:25565${NC}"
 echo -e "    Internet     : ${BLUE}Voir l'adresse dans : screen -r $SCREEN_PLAYIT${NC}"
 echo ""
 echo -e "  ${YELLOW}PREMIERE FOIS avec Playit.gg ?${NC}"

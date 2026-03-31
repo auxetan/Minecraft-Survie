@@ -49,7 +49,8 @@ public class MenuModule implements CoreModule, Listener {
 
     @EventHandler
     public void onSwapHand(PlayerSwapHandItemsEvent event) {
-        // F key triggers swap hand event — open menu
+        // Shift+F ouvre le menu ; F seul = comportement vanilla (échange offhand)
+        if (!event.getPlayer().isSneaking()) return;
         event.setCancelled(true);
         openMainMenu(event.getPlayer());
     }
