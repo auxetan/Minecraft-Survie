@@ -23,19 +23,21 @@ settings:
   deprecated-verbose: default
   shutdown-message: "Serveur en arrêt. À bientôt !"
 
-# ── Générateur de monde Terra (décommente pour activer) ──────────
-# Pour activer les biomes custom SurvivalCraft :
-# 1. Supprime le dossier server/world/ (attention : irréversible)
-# 2. Décommente les lignes ci-dessous
-# 3. Lance ./start.sh — Terra génèrera le monde avec tes biomes custom
+# ── Générateur de monde Terra — ACTIF ───────────────────────────
+# Terra génère les biomes custom SurvivalCraft pour le monde principal.
+# Le Nether et l'End restent en génération vanilla.
 #
-# worlds:
-#   world:
-#     generator: Terra:SurvivalCraft
-#   world_nether:
-#     generator: default
-#   world_the_end:
-#     generator: default
+# ⚠ Si tu as déjà un monde existant (dossier server/world/), les
+#   nouveaux chunks utiliseront Terra mais les anciens restent vanilla.
+#   Pour un monde 100% custom, supprime server/world/ avant le 1er lancement.
+
+worlds:
+  world:
+    generator: Terra:SurvivalCraft
+  world_nether:
+    generator: default
+  world_the_end:
+    generator: default
 
 # ── Configuration du spawn ────────────────────────────────────────
 spawn-limits:

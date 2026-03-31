@@ -1,153 +1,311 @@
-# Configuration du Shop Admin
-# Catégories et items avec prix d'achat/vente
+# ================================================================
+#  Shop Admin — SurvivalCraft
+#  Économie équilibrée : early game accessible, end game ULTRA dur.
+#
+#  Revenus moyens par joueur :
+#    - Quête EASY  : ~50✦    | MEDIUM : ~100✦   | HARD : ~200✦
+#    - Weekly      : ~600✦   | Boss   : 2000-5000✦ (boss tokens)
+#  Objectifs de progression :
+#    - Diamant complet       : ~5 000✦   (quelques jours)
+#    - Netherite complet     : ~50 000✦  (semaines)
+#    - Élytra                : 150 000✦  (mois de jeu)
+#    - Balise                : 500 000✦  (prestige absolu)
+# ================================================================
 
 categories:
+
+  # ── Ressources de base ────────────────────────────────────────
   resources:
     display-name: "&7⛏ Ressources"
     icon: IRON_INGOT
     slot: 10
     items:
-      COBBLESTONE: { buy: 0.5, sell: 0.1 }
-      IRON_INGOT: { buy: 5.0, sell: 2.0 }
-      GOLD_INGOT: { buy: 10.0, sell: 4.0 }
-      DIAMOND: { buy: 50.0, sell: 20.0 }
-      EMERALD: { buy: 30.0, sell: 12.0 }
-      COPPER_INGOT: { buy: 3.0, sell: 1.0 }
-      NETHERITE_INGOT: { buy: 200.0, sell: 80.0 }
-      REDSTONE: { buy: 2.0, sell: 0.5 }
-      LAPIS_LAZULI: { buy: 3.0, sell: 1.0 }
-      COAL: { buy: 1.0, sell: 0.3 }
-      OAK_LOG: { buy: 1.0, sell: 0.3 }
-      SPRUCE_LOG: { buy: 1.0, sell: 0.3 }
-      DARK_OAK_LOG: { buy: 1.5, sell: 0.5 }
+      COBBLESTONE:         { buy: 0.5,      sell: 0.1    }
+      GRAVEL:              { buy: 0.5,      sell: 0.1    }
+      SAND:                { buy: 0.8,      sell: 0.2    }
+      CLAY_BALL:           { buy: 1.0,      sell: 0.3    }
+      COAL:                { buy: 1.5,      sell: 0.4    }
+      IRON_INGOT:          { buy: 8.0,      sell: 3.0    }
+      GOLD_INGOT:          { buy: 18.0,     sell: 7.0    }
+      COPPER_INGOT:        { buy: 4.0,      sell: 1.5    }
+      REDSTONE:            { buy: 3.0,      sell: 0.8    }
+      LAPIS_LAZULI:        { buy: 5.0,      sell: 1.5    }
+      DIAMOND:             { buy: 200.0,    sell: 60.0   }
+      EMERALD:             { buy: 150.0,    sell: 45.0   }
+      NETHERITE_INGOT:     { buy: 3500.0,   sell: 1200.0 }
+      ANCIENT_DEBRIS:      { buy: 1500.0,   sell: 500.0  }
+      ECHO_SHARD:          { buy: 400.0,    sell: 150.0  }
+      AMETHYST_SHARD:      { buy: 8.0,      sell: 2.5    }
+      RAW_IRON:            { buy: 5.0,      sell: 1.8    }
+      RAW_GOLD:            { buy: 12.0,     sell: 4.5    }
+      RAW_COPPER:          { buy: 2.5,      sell: 0.8    }
+      OBSIDIAN:            { buy: 15.0,     sell: 4.0    }
+      CRYING_OBSIDIAN:     { buy: 20.0,     sell: 7.0    }
 
+  # ── Bois & Nature ─────────────────────────────────────────────
+  wood:
+    display-name: "&2🌲 Bois & Nature"
+    icon: OAK_LOG
+    slot: 11
+    items:
+      OAK_LOG:             { buy: 1.5,      sell: 0.4    }
+      SPRUCE_LOG:          { buy: 1.5,      sell: 0.4    }
+      BIRCH_LOG:           { buy: 1.5,      sell: 0.4    }
+      JUNGLE_LOG:          { buy: 2.0,      sell: 0.6    }
+      ACACIA_LOG:          { buy: 1.5,      sell: 0.4    }
+      DARK_OAK_LOG:        { buy: 2.0,      sell: 0.6    }
+      MANGROVE_LOG:        { buy: 2.0,      sell: 0.6    }
+      CHERRY_LOG:          { buy: 2.5,      sell: 0.8    }
+      BAMBOO:              { buy: 0.5,      sell: 0.1    }
+      SUGAR_CANE:          { buy: 0.8,      sell: 0.2    }
+      CACTUS:              { buy: 0.8,      sell: 0.2    }
+      KELP:                { buy: 0.5,      sell: 0.1    }
+      VINE:                { buy: 0.8,      sell: 0.2    }
+      MOSS_BLOCK:          { buy: 3.0,      sell: 0.8    }
+      CRIMSON_STEM:        { buy: 2.5,      sell: 0.7    }
+      WARPED_STEM:         { buy: 2.5,      sell: 0.7    }
+
+  # ── Nourriture ────────────────────────────────────────────────
   food:
     display-name: "&a🌾 Nourriture"
     icon: BREAD
     slot: 12
     items:
-      BREAD: { buy: 2.0, sell: 0.5 }
-      COOKED_BEEF: { buy: 3.0, sell: 1.0 }
-      COOKED_PORKCHOP: { buy: 3.0, sell: 1.0 }
-      COOKED_CHICKEN: { buy: 2.5, sell: 0.8 }
-      GOLDEN_APPLE: { buy: 50.0, sell: 20.0 }
-      GOLDEN_CARROT: { buy: 15.0, sell: 5.0 }
-      CAKE: { buy: 10.0, sell: 3.0 }
-      PUMPKIN_PIE: { buy: 5.0, sell: 1.5 }
-      COOKIE: { buy: 1.0, sell: 0.3 }
+      WHEAT:               { buy: 1.0,      sell: 0.2    }
+      BREAD:               { buy: 3.0,      sell: 0.8    }
+      COOKED_BEEF:         { buy: 5.0,      sell: 1.5    }
+      COOKED_PORKCHOP:     { buy: 5.0,      sell: 1.5    }
+      COOKED_CHICKEN:      { buy: 4.0,      sell: 1.2    }
+      COOKED_MUTTON:       { buy: 4.0,      sell: 1.2    }
+      COOKED_RABBIT:       { buy: 4.0,      sell: 1.2    }
+      COOKED_SALMON:       { buy: 4.0,      sell: 1.2    }
+      COOKED_COD:          { buy: 3.0,      sell: 0.8    }
+      GOLDEN_CARROT:       { buy: 25.0,     sell: 8.0    }
+      GOLDEN_APPLE:        { buy: 150.0,    sell: 50.0   }
+      CAKE:                { buy: 15.0,     sell: 4.0    }
+      PUMPKIN_PIE:         { buy: 8.0,      sell: 2.0    }
+      BEETROOT:            { buy: 1.5,      sell: 0.4    }
+      APPLE:               { buy: 2.0,      sell: 0.5    }
+      MELON_SLICE:         { buy: 1.0,      sell: 0.2    }
+      SWEET_BERRIES:       { buy: 1.5,      sell: 0.4    }
+      DRIED_KELP:          { buy: 0.5,      sell: 0.1    }
+      TORCHFLOWER:         { buy: 10.0,     sell: 3.0    }
 
+  # ── Potions & Brassage ────────────────────────────────────────
   potions:
     display-name: "&d🔮 Potions"
     icon: POTION
+    slot: 13
+    items:
+      NETHER_WART:         { buy: 5.0,      sell: 1.5    }
+      BLAZE_ROD:           { buy: 15.0,     sell: 5.0    }
+      BLAZE_POWDER:        { buy: 8.0,      sell: 2.5    }
+      GHAST_TEAR:          { buy: 35.0,     sell: 12.0   }
+      MAGMA_CREAM:         { buy: 8.0,      sell: 2.5    }
+      FERMENTED_SPIDER_EYE:{ buy: 10.0,     sell: 3.0    }
+      PHANTOM_MEMBRANE:    { buy: 15.0,     sell: 5.0    }
+      PUFFERFISH:          { buy: 8.0,      sell: 2.5    }
+      GOLDEN_CARROT:       { buy: 25.0,     sell: 8.0    }
+      TURTLE_SCUTE:        { buy: 20.0,     sell: 7.0    }
+      EXPERIENCE_BOTTLE:   { buy: 12.0,     sell: 4.0    }
+      RABBIT_FOOT:         { buy: 12.0,     sell: 4.0    }
+      SPIDER_EYE:          { buy: 5.0,      sell: 1.5    }
+
+  # ── Équipements (acier & diamant) ─────────────────────────────
+  equipment:
+    display-name: "&b⚔ Équipements"
+    icon: DIAMOND_CHESTPLATE
     slot: 14
     items:
-      EXPERIENCE_BOTTLE: { buy: 8.0, sell: 3.0 }
-      BLAZE_ROD: { buy: 10.0, sell: 4.0 }
-      GHAST_TEAR: { buy: 20.0, sell: 8.0 }
-      NETHER_WART: { buy: 3.0, sell: 1.0 }
-      MAGMA_CREAM: { buy: 5.0, sell: 2.0 }
-      FERMENTED_SPIDER_EYE: { buy: 6.0, sell: 2.0 }
-      PHANTOM_MEMBRANE: { buy: 8.0, sell: 3.0 }
+      # Fer — early game
+      IRON_SWORD:          { buy: 25.0,     sell: 8.0    }
+      IRON_PICKAXE:        { buy: 25.0,     sell: 8.0    }
+      IRON_AXE:            { buy: 25.0,     sell: 8.0    }
+      IRON_SHOVEL:         { buy: 15.0,     sell: 5.0    }
+      IRON_HOE:            { buy: 15.0,     sell: 5.0    }
+      IRON_HELMET:         { buy: 40.0,     sell: 12.0   }
+      IRON_CHESTPLATE:     { buy: 65.0,     sell: 20.0   }
+      IRON_LEGGINGS:       { buy: 55.0,     sell: 17.0   }
+      IRON_BOOTS:          { buy: 35.0,     sell: 11.0   }
+      # Diamant — mid-game coûteux
+      DIAMOND_SWORD:       { buy: 500.0,    sell: 150.0  }
+      DIAMOND_PICKAXE:     { buy: 500.0,    sell: 150.0  }
+      DIAMOND_AXE:         { buy: 500.0,    sell: 150.0  }
+      DIAMOND_SHOVEL:      { buy: 300.0,    sell: 90.0   }
+      DIAMOND_HOE:         { buy: 300.0,    sell: 90.0   }
+      DIAMOND_HELMET:      { buy: 700.0,    sell: 200.0  }
+      DIAMOND_CHESTPLATE:  { buy: 1200.0,   sell: 350.0  }
+      DIAMOND_LEGGINGS:    { buy: 1000.0,   sell: 300.0  }
+      DIAMOND_BOOTS:       { buy: 600.0,    sell: 180.0  }
+      # Divers
+      SHIELD:              { buy: 35.0,     sell: 10.0   }
+      BOW:                 { buy: 25.0,     sell: 8.0    }
+      CROSSBOW:            { buy: 40.0,     sell: 12.0   }
+      FISHING_ROD:         { buy: 10.0,     sell: 3.0    }
+      FLINT_AND_STEEL:     { buy: 15.0,     sell: 4.0    }
 
-  equipment:
-    display-name: "&b🎒 Équipements"
-    icon: DIAMOND_CHESTPLATE
+  # ── Redstone ─────────────────────────────────────────────────
+  redstone:
+    display-name: "&c⚡ Redstone"
+    icon: REDSTONE
+    slot: 15
+    items:
+      REPEATER:            { buy: 6.0,      sell: 2.0    }
+      COMPARATOR:          { buy: 8.0,      sell: 2.5    }
+      OBSERVER:            { buy: 12.0,     sell: 4.0    }
+      PISTON:              { buy: 8.0,      sell: 2.5    }
+      STICKY_PISTON:       { buy: 10.0,     sell: 3.0    }
+      REDSTONE:            { buy: 3.0,      sell: 0.8    }
+      REDSTONE_TORCH:      { buy: 1.5,      sell: 0.4    }
+      HOPPER:              { buy: 18.0,     sell: 5.0    }
+      DROPPER:             { buy: 4.0,      sell: 1.2    }
+      DISPENSER:           { buy: 7.0,      sell: 2.0    }
+      LEVER:               { buy: 0.8,      sell: 0.2    }
+      STONE_BUTTON:        { buy: 0.8,      sell: 0.2    }
+      TRIPWIRE_HOOK:       { buy: 3.0,      sell: 0.8    }
+      DAYLIGHT_DETECTOR:   { buy: 8.0,      sell: 2.5    }
+      TRAPPED_CHEST:       { buy: 5.0,      sell: 1.5    }
+      TARGET:              { buy: 4.0,      sell: 1.2    }
+      LIGHTNING_ROD:       { buy: 20.0,     sell: 7.0    }
+
+  # ── Décorations ───────────────────────────────────────────────
+  decorations:
+    display-name: "&e🏠 Décorations"
+    icon: LANTERN
     slot: 16
     items:
-      IRON_SWORD: { buy: 15.0, sell: 5.0 }
-      IRON_PICKAXE: { buy: 15.0, sell: 5.0 }
-      DIAMOND_SWORD: { buy: 75.0, sell: 25.0 }
-      DIAMOND_PICKAXE: { buy: 75.0, sell: 25.0 }
-      DIAMOND_CHESTPLATE: { buy: 120.0, sell: 40.0 }
-      DIAMOND_HELMET: { buy: 80.0, sell: 25.0 }
-      DIAMOND_LEGGINGS: { buy: 100.0, sell: 35.0 }
-      DIAMOND_BOOTS: { buy: 65.0, sell: 20.0 }
-      SHIELD: { buy: 20.0, sell: 5.0 }
-      BOW: { buy: 15.0, sell: 5.0 }
-      CROSSBOW: { buy: 25.0, sell: 8.0 }
+      GLASS:               { buy: 2.0,      sell: 0.5    }
+      WHITE_STAINED_GLASS: { buy: 2.5,      sell: 0.6    }
+      LIGHT_BLUE_STAINED_GLASS: { buy: 2.5, sell: 0.6   }
+      YELLOW_STAINED_GLASS:{ buy: 2.5,      sell: 0.6    }
+      RED_STAINED_GLASS:   { buy: 2.5,      sell: 0.6    }
+      WHITE_CONCRETE:      { buy: 4.0,      sell: 1.0    }
+      ORANGE_CONCRETE:     { buy: 4.0,      sell: 1.0    }
+      CYAN_CONCRETE:       { buy: 4.0,      sell: 1.0    }
+      BLUE_CONCRETE:       { buy: 4.0,      sell: 1.0    }
+      WHITE_TERRACOTTA:    { buy: 3.0,      sell: 0.8    }
+      WHITE_GLAZED_TERRACOTTA: { buy: 5.0,  sell: 1.5   }
+      LANTERN:             { buy: 5.0,      sell: 1.5    }
+      SOUL_LANTERN:        { buy: 7.0,      sell: 2.5    }
+      CHAIN:               { buy: 4.0,      sell: 1.2    }
+      WHITE_CANDLE:        { buy: 3.0,      sell: 0.8    }
+      FLOWER_POT:          { buy: 3.0,      sell: 0.8    }
+      PAINTING:            { buy: 4.0,      sell: 1.2    }
+      ITEM_FRAME:          { buy: 4.0,      sell: 1.2    }
+      GLOW_ITEM_FRAME:     { buy: 12.0,     sell: 4.0    }
+      BELL:                { buy: 20.0,     sell: 6.0    }
+      SCAFFOLDING:         { buy: 1.5,      sell: 0.3    }
+      CHISELED_BOOKSHELF:  { buy: 10.0,     sell: 3.0    }
+      LODESTONE:           { buy: 50.0,     sell: 15.0   }
+      SPYGLASS:            { buy: 30.0,     sell: 10.0   }
 
+  # ── Divers ────────────────────────────────────────────────────
+  misc:
+    display-name: "&7📦 Divers"
+    icon: NAME_TAG
+    slot: 17
+    items:
+      NAME_TAG:            { buy: 30.0,     sell: 10.0   }
+      SADDLE:              { buy: 40.0,     sell: 14.0   }
+      LEAD:                { buy: 12.0,     sell: 4.0    }
+      BOOK:                { buy: 3.0,      sell: 0.8    }
+      PAPER:               { buy: 0.8,      sell: 0.2    }
+      MAP:                 { buy: 5.0,      sell: 1.5    }
+      FIREWORK_ROCKET:     { buy: 4.0,      sell: 1.2    }
+      ENDER_PEARL:         { buy: 15.0,     sell: 5.0    }
+      ENDER_EYE:           { buy: 25.0,     sell: 8.0    }
+      COMPASS:             { buy: 8.0,      sell: 2.5    }
+      CLOCK:               { buy: 12.0,     sell: 4.0    }
+      SPYGLASS:            { buy: 30.0,     sell: 10.0   }
+      BUNDLE:              { buy: 18.0,     sell: 5.0    }
+      SHULKER_BOX:         { buy: 500.0,    sell: 150.0  }
+      SHULKER_SHELL:       { buy: 250.0,    sell: 80.0   }
+      HEART_OF_THE_SEA:    { buy: 200.0,    sell: 70.0   }
+      NAUTILUS_SHELL:      { buy: 30.0,     sell: 10.0   }
+      SPONGE:              { buy: 25.0,     sell: 8.0    }
+      HONEYCOMB:           { buy: 8.0,      sell: 2.5    }
+      INK_SAC:             { buy: 5.0,      sell: 1.5    }
+      GLOW_INK_SAC:        { buy: 8.0,      sell: 2.5    }
+      LEATHER:             { buy: 6.0,      sell: 2.0    }
+      WOOL:                { buy: 3.0,      sell: 0.8    }
+      PRISMARINE_SHARD:    { buy: 8.0,      sell: 2.5    }
+      SEA_PICKLE:          { buy: 5.0,      sell: 1.5    }
+      WITHER_SKELETON_SKULL:{ buy: 20000.0, sell: 6000.0 }
+
+  # ── Légendaires (stock limité, ULTRA cher) ────────────────────
   legendary:
     display-name: "&6🌟 Légendaires"
     icon: NETHER_STAR
     slot: 22
     weekly-stock: 3
     items:
-      ENCHANTED_GOLDEN_APPLE: { buy: 500.0, sell: 0, stock: 3 }
-      TOTEM_OF_UNDYING: { buy: 800.0, sell: 0, stock: 2 }
-      ELYTRA: { buy: 2000.0, sell: 0, stock: 1 }
-      TRIDENT: { buy: 1000.0, sell: 0, stock: 2 }
-      NETHER_STAR: { buy: 1500.0, sell: 0, stock: 1 }
+      # ── Objets ultra end-game ──────────────────────────────────
+      ELYTRA:
+        buy: 150000.0
+        sell: 0
+        stock: 1
+      BEACON:
+        buy: 500000.0
+        sell: 0
+        stock: 1
+      NETHER_STAR:
+        buy: 25000.0
+        sell: 0
+        stock: 2
+      ENCHANTED_GOLDEN_APPLE:
+        buy: 8000.0
+        sell: 0
+        stock: 3
+      TOTEM_OF_UNDYING:
+        buy: 12000.0
+        sell: 0
+        stock: 2
+      TRIDENT:
+        buy: 15000.0
+        sell: 0
+        stock: 2
+      # ── Armure Netherite (très cher, farm intensif requis) ──────
+      NETHERITE_SWORD:
+        buy: 45000.0
+        sell: 0
+        stock: 1
+      NETHERITE_PICKAXE:
+        buy: 45000.0
+        sell: 0
+        stock: 1
+      NETHERITE_HELMET:
+        buy: 55000.0
+        sell: 0
+        stock: 1
+      NETHERITE_CHESTPLATE:
+        buy: 90000.0
+        sell: 0
+        stock: 1
+      NETHERITE_LEGGINGS:
+        buy: 75000.0
+        sell: 0
+        stock: 1
+      NETHERITE_BOOTS:
+        buy: 50000.0
+        sell: 0
+        stock: 1
+      # ── Objets rares supplémentaires ───────────────────────────
+      DRAGON_HEAD:
+        buy: 200000.0
+        sell: 0
+        stock: 1
+      MUSIC_DISC_PIGSTEP:
+        buy: 5000.0
+        sell: 0
+        stock: 2
+      MUSIC_DISC_OTHERSIDE:
+        buy: 5000.0
+        sell: 0
+        stock: 2
+      CONDUIT:
+        buy: 80000.0
+        sell: 0
+        stock: 1
 
-  redstone:
-    display-name: "&c⚡ Redstone"
-    icon: REDSTONE
-    slot: 13
-    items:
-      REPEATER:          { buy: 4.0,   sell: 1.5  }
-      COMPARATOR:        { buy: 6.0,   sell: 2.0  }
-      OBSERVER:          { buy: 8.0,   sell: 3.0  }
-      PISTON:            { buy: 5.0,   sell: 2.0  }
-      STICKY_PISTON:     { buy: 7.0,   sell: 2.5  }
-      REDSTONE:          { buy: 2.0,   sell: 0.5  }
-      REDSTONE_TORCH:    { buy: 1.0,   sell: 0.3  }
-      HOPPER:            { buy: 12.0,  sell: 4.0  }
-      DROPPER:           { buy: 3.0,   sell: 1.0  }
-      DISPENSER:         { buy: 5.0,   sell: 1.5  }
-      LEVER:             { buy: 0.5,   sell: 0.1  }
-      STONE_BUTTON:      { buy: 0.5,   sell: 0.1  }
-      TRIPWIRE_HOOK:     { buy: 2.0,   sell: 0.5  }
-      DAYLIGHT_DETECTOR: { buy: 6.0,   sell: 2.0  }
-      TRAPPED_CHEST:     { buy: 4.0,   sell: 1.5  }
-
-  decorations:
-    display-name: "&b🏠 Décorations"
-    icon: LANTERN
-    slot: 15
-    items:
-      GLASS:                  { buy: 1.5,  sell: 0.4  }
-      WHITE_STAINED_GLASS:    { buy: 2.0,  sell: 0.5  }
-      LIGHT_BLUE_STAINED_GLASS: { buy: 2.0, sell: 0.5 }
-      YELLOW_STAINED_GLASS:   { buy: 2.0,  sell: 0.5  }
-      RED_STAINED_GLASS:      { buy: 2.0,  sell: 0.5  }
-      GREEN_STAINED_GLASS:    { buy: 2.0,  sell: 0.5  }
-      BLACK_STAINED_GLASS:    { buy: 2.0,  sell: 0.5  }
-      WHITE_TERRACOTTA:       { buy: 2.0,  sell: 0.5  }
-      ORANGE_TERRACOTTA:      { buy: 2.0,  sell: 0.5  }
-      CYAN_TERRACOTTA:        { buy: 2.0,  sell: 0.5  }
-      WHITE_CONCRETE:         { buy: 3.0,  sell: 0.8  }
-      ORANGE_CONCRETE:        { buy: 3.0,  sell: 0.8  }
-      CYAN_CONCRETE:          { buy: 3.0,  sell: 0.8  }
-      LANTERN:                { buy: 4.0,  sell: 1.5  }
-      SOUL_LANTERN:           { buy: 5.0,  sell: 2.0  }
-      CHAIN:                  { buy: 3.0,  sell: 1.0  }
-      WHITE_CANDLE:           { buy: 2.5,  sell: 0.8  }
-      FLOWER_POT:             { buy: 2.0,  sell: 0.5  }
-      PAINTING:               { buy: 3.0,  sell: 1.0  }
-      ITEM_FRAME:             { buy: 3.0,  sell: 1.0  }
-      GLOW_ITEM_FRAME:        { buy: 8.0,  sell: 3.0  }
-      BELL:                   { buy: 15.0, sell: 5.0  }
-      SCAFFOLDING:            { buy: 1.0,  sell: 0.2  }
-
-  misc:
-    display-name: "&7📦 Divers"
-    icon: NAME_TAG
-    slot: 17
-    items:
-      NAME_TAG:         { buy: 20.0,  sell: 8.0  }
-      SADDLE:           { buy: 25.0,  sell: 10.0 }
-      LEAD:             { buy: 8.0,   sell: 3.0  }
-      BOOK:             { buy: 2.0,   sell: 0.5  }
-      PAPER:            { buy: 0.5,   sell: 0.1  }
-      MAP:              { buy: 3.0,   sell: 1.0  }
-      FIREWORK_ROCKET:  { buy: 3.0,   sell: 1.0  }
-      ENDER_PEARL:      { buy: 10.0,  sell: 4.0  }
-      ENDER_EYE:        { buy: 15.0,  sell: 6.0  }
-      COMPASS:          { buy: 5.0,   sell: 1.5  }
-      CLOCK:            { buy: 8.0,   sell: 2.5  }
-      SPYGLASS:         { buy: 20.0,  sell: 8.0  }
-      BUNDLE:           { buy: 12.0,  sell: 4.0  }
-      SHULKER_BOX:      { buy: 50.0,  sell: 20.0 }
-      TURTLE_EGG:       { buy: 30.0,  sell: 12.0 }
-
-# Taxe marché joueur
+# Taxe marché joueur (5%)
 market-tax: 0.05
