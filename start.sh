@@ -108,6 +108,52 @@ if [ -n "$PLUGIN_JAR" ]; then
     ok "Plugin deploye : $(basename "$PLUGIN_JAR")"
 fi
 
+# ── Demarrage ANTICIPÉ de Playit.gg (avant MC pour récupérer l'URL HTTP) ──
+PLAYIT_HTTP_URL=""
+if [ -f "$PLAYIT_BIN" ]; then
+    if screen -list 2>/dev/null | grep -q "$SCREEN_PLAYIT"; then
+        ok "Playit.gg tourne deja — tentative de récupération URL HTTP..."
+    else
+        info "Démarrage anticipé de Playit.gg (pour URL pack de textures)..."
+        screen -dmS "$SCREEN_PLAYIT" "$PLAYIT_BIN"
+        info "Attente connexion Playit.gg (5 s)..."
+        sleep 5
+    fi
+
+    # Interroger l'API locale du démon playit (port 5174, présent sur v0.15+)
+    # Cherche un tunnel HTTP/HTTPS dont le local_port est MODPAGE_PORT (8080)
+    PLAYIT_API_RESP=$(curl -s --max-time 2 "http://127.0.0.1:5174/api/v1/tunnels" 2>/dev/null \
+        || curl -s --max-time 2 "http://127.0.0.1:5174/api/tunnels" 2>/dev/null || echo "")
+
+    if [ -n "$PLAYIT_API_RESP" ]; then
+        PLAYIT_HTTP_URL=$(echo "$PLAYIT_API_RESP" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    tunnels = data if isinstance(data, list) else data.get('tunnels', data.get('data', []))
+    for t in tunnels:
+        proto = str(t.get('proto', t.get('protocol', ''))).lower()
+        local_port = t.get('local_port', t.get('localPort', 0))
+        if ('http' in proto) and int(local_port) == $MODPAGE_PORT:
+            addr = t.get('public_url', t.get('publicUrl', t.get('address', '')))
+            if addr and not addr.startswith('http'):
+                addr = 'http://' + addr
+            print(addr.rstrip('/'))
+            sys.exit(0)
+except Exception:
+    pass
+" 2>/dev/null || echo "")
+    fi
+
+    # Fallback: lire depuis server/rp_url.txt si l'utilisateur l'a créé manuellement
+    if [ -z "$PLAYIT_HTTP_URL" ] && [ -f "$SERVER_DIR/rp_url.txt" ]; then
+        PLAYIT_HTTP_URL=$(cat "$SERVER_DIR/rp_url.txt" | tr -d '[:space:]')
+        [ -n "$PLAYIT_HTTP_URL" ] && ok "URL HTTP depuis rp_url.txt : $PLAYIT_HTTP_URL"
+    fi
+else
+    warn "Playit.gg non installé. Lance ./setup.sh pour l'installer."
+fi
+
 # ── Pack de textures Faithless — zip + SHA1 + server.properties ─
 FAITHLESS_DIR="$SCRIPT_DIR/Faithless"
 FAITHLESS_ZIP="$SERVER_DIR/faithless.zip"
@@ -120,9 +166,21 @@ if [ -d "$FAITHLESS_DIR" ]; then
     else
         FAITHLESS_SHA1=$(sha1sum "$FAITHLESS_ZIP" | awk '{print $1}')
     fi
-    # URL du pack — utilise PUBLIC_RP_URL si défini (tunnnel HTTP), sinon IP locale
-    RP_URL="${PUBLIC_RP_URL:-http://${LOCAL_IP}:${MODPAGE_PORT}/resourcepack}"
-    # Mettre à jour server.properties (supprimer les anciens champs resource-pack)
+
+    # Choisir l'URL : HTTP tunnel (internet) > variable env > LAN
+    if [ -n "$PLAYIT_HTTP_URL" ]; then
+        RP_URL="${PLAYIT_HTTP_URL}/resourcepack"
+        ok "Pack de textures via tunnel HTTP Playit : $RP_URL"
+    elif [ -n "${PUBLIC_RP_URL:-}" ]; then
+        RP_URL="$PUBLIC_RP_URL"
+        ok "Pack de textures via PUBLIC_RP_URL : $RP_URL"
+    else
+        RP_URL="http://${LOCAL_IP}:${MODPAGE_PORT}/resourcepack"
+        warn "Pack de textures accessible LAN seulement : $RP_URL"
+        warn "Pour internet : crée un tunnel HTTP dans playit.gg (port $MODPAGE_PORT)"
+        warn "  Puis sauvegarde l'URL dans server/rp_url.txt"
+    fi
+
     PROPS="$SERVER_DIR/server.properties"
     grep -v "^resource-pack" "$PROPS" > "$PROPS.tmp"
     cat >> "$PROPS.tmp" << RPEOF
@@ -132,7 +190,6 @@ resource-pack-prompt=\u00a7b\u2756 \u00a7fPack de textures officiel SurvivalCraf
 require-resource-pack=false
 RPEOF
     mv "$PROPS.tmp" "$PROPS"
-    ok "Pack de textures : $RP_URL"
     ok "SHA1 : $FAITHLESS_SHA1"
 else
     warn "Dossier Faithless/ introuvable — pack de textures non configuré."
@@ -184,23 +241,13 @@ else
     error "Le serveur n'a pas demarre. Verifie server/logs/latest.log"
 fi
 
-# ── Demarrage de Playit.gg ──────────────────────────────────────
+# Vérification finale de Playit.gg (démarré en amont)
 if [ -f "$PLAYIT_BIN" ]; then
     if screen -list 2>/dev/null | grep -q "$SCREEN_PLAYIT"; then
-        ok "Playit.gg tourne deja."
+        ok "Playit.gg actif."
     else
-        info "Demarrage du tunnel Playit.gg..."
-        screen -dmS "$SCREEN_PLAYIT" "$PLAYIT_BIN"
-        sleep 2
-        if screen -list 2>/dev/null | grep -q "$SCREEN_PLAYIT"; then
-            ok "Playit.gg demarre."
-        else
-            warn "Playit.gg n'a pas demarre. Lance-le manuellement : $PLAYIT_BIN"
-        fi
+        warn "Playit.gg n'a pas demarre. Lance-le manuellement : $PLAYIT_BIN"
     fi
-else
-    warn "Playit.gg non installe. Lance ./setup.sh pour l'installer."
-    warn "Sans Playit.gg, seuls les joueurs sur ton reseau local peuvent rejoindre."
 fi
 
 # ── Resume ──────────────────────────────────────────────────────
@@ -219,6 +266,13 @@ echo ""
 echo -e "  ${CYAN}Connexion :${NC}"
 echo -e "    Reseau local : ${BLUE}${LOCAL_IP}:25565${NC}"
 echo -e "    Internet     : ${GREEN}${PLAYIT_PUBLIC_URL}${NC}"
+echo ""
+echo -e "  ${CYAN}Pack de textures (Faithless) :${NC}"
+echo -e "    URL : ${BLUE}${RP_URL:-non configuré}${NC}"
+echo ""
+echo -e "  ${CYAN}Carte 3D BlueMap :${NC}"
+echo -e "    Local  : ${BLUE}http://${LOCAL_IP}:8123${NC}"
+[ -n "$PLAYIT_HTTP_URL" ] && echo -e "    Web    : ${GREEN}${PLAYIT_HTTP_URL/:8080/:8123}${NC}"
 echo ""
 echo -e "  ${YELLOW}Partage cette adresse a tes potes :${NC}"
 echo -e "    ${GREEN}${PLAYIT_PUBLIC_URL}${NC}"
