@@ -1,6 +1,6 @@
 # Pool de quêtes journalières
 # Chaque joueur reçoit 3 quêtes aléatoires par jour (minuit heure réelle)
-# Types supportés : KILL, GATHER, CRAFT, TRAVEL, BREW, FISH, SMELT
+# Types supportés : KILL, GATHER, CRAFT, TRAVEL, BREW, FISH, SMELT, EXPLORE
 
 quests:
   # ── KILL — Mobs communs ───────────────────────────────────
@@ -435,3 +435,116 @@ quests:
     difficulty: EASY
     reward-money: 45
     reward-xp: 90
+
+  # ── EXPLORE — Biomes Custom ──────────────────────────────
+  # Cibles : la clé du biome Terra (minuscule) OU la clé vanilla de base.
+  # Si Terra enregistre le biome custom, la clé sera "crystalline_caves", etc.
+  # Sinon, la clé vanilla de remplacement ("deep_dark") est acceptée aussi.
+
+  explore_crystalline_caves:
+    type: EXPLORE
+    target: crystalline_caves
+    amount: 1
+    display: "Explore les Cavernes Cristallines"
+    difficulty: HARD
+    reward-money: 500
+    reward-xp: 1000
+
+  explore_crystalline_caves_fallback:
+    type: EXPLORE
+    target: deep_dark
+    amount: 1
+    display: "Descends dans le Deep Dark"
+    difficulty: HARD
+    reward-money: 300
+    reward-xp: 600
+
+  explore_bioluminescent_forest:
+    type: EXPLORE
+    target: bioluminescent_forest
+    amount: 1
+    display: "Explore la Forêt Bioluminescente"
+    difficulty: MEDIUM
+    reward-money: 350
+    reward-xp: 700
+
+  explore_golden_sands:
+    type: EXPLORE
+    target: golden_sands
+    amount: 1
+    display: "Traverse le Désert Doré"
+    difficulty: EASY
+    reward-money: 200
+    reward-xp: 400
+
+  explore_volcanic_highlands:
+    type: EXPLORE
+    target: volcanic_highlands
+    amount: 1
+    display: "Arpente les Hauts-Plateaux Volcaniques"
+    difficulty: HARD
+    reward-money: 600
+    reward-xp: 1200
+
+  explore_frozen_wasteland:
+    type: EXPLORE
+    target: frozen_wasteland
+    amount: 1
+    display: "Survie dans le Wasteland Glacé"
+    difficulty: HARD
+    reward-money: 550
+    reward-xp: 1100
+
+  explore_ancient_jungle:
+    type: EXPLORE
+    target: ancient_jungle
+    amount: 1
+    display: "Perds-toi dans la Jungle Ancienne"
+    difficulty: MEDIUM
+    reward-money: 400
+    reward-xp: 800
+
+  explore_sakura_valley:
+    type: EXPLORE
+    target: sakura_valley
+    amount: 1
+    display: "Visite la Vallée Sakura"
+    difficulty: EASY
+    reward-money: 250
+    reward-xp: 500
+
+  explore_mushroom_kingdom:
+    type: EXPLORE
+    target: mushroom_kingdom
+    amount: 1
+    display: "Découvre le Royaume des Champignons"
+    difficulty: MEDIUM
+    reward-money: 300
+    reward-xp: 600
+
+  explore_shadow_realm:
+    type: EXPLORE
+    target: shadow_realm
+    amount: 1
+    display: "Entre dans le Royaume des Ombres"
+    difficulty: HARD
+    reward-money: 800
+    reward-xp: 1600
+
+  explore_coral_abyss:
+    type: EXPLORE
+    target: coral_abyss
+    amount: 1
+    display: "Plonge dans les Abysses Coralliennes"
+    difficulty: HARD
+    reward-money: 700
+    reward-xp: 1400
+
+  explore_enchanted_meadow:
+    type: EXPLORE
+    target: enchanted_meadow
+    amount: 1
+    display: "Repose-toi dans la Prairie Enchantée"
+    difficulty: EASY
+    reward-money: 200
+    reward-xp: 400

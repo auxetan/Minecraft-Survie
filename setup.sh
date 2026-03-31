@@ -112,14 +112,14 @@ ok "JAVA_HOME = $JAVA_HOME"
 # ════════════════════════════════════════════════════════════════
 #  ETAPE 2 — OUTILS SYSTEME
 # ════════════════════════════════════════════════════════════════
-info "2/8  Outils systeme (screen, curl, unzip, python3)..."
+info "2/8  Outils systeme (screen, curl, unzip, zip, python3)..."
 
 if [ "$OS" = "Darwin" ]; then
     command -v brew &>/dev/null || error "Homebrew requis sur macOS. Installe-le via https://brew.sh"
     BREW_TO_INSTALL=()
     command -v screen  &>/dev/null || BREW_TO_INSTALL+=(screen)
-    # curl, python3 et unzip sont generalement deja presents sur macOS
     command -v unzip   &>/dev/null || BREW_TO_INSTALL+=(unzip)
+    command -v zip     &>/dev/null || BREW_TO_INSTALL+=(zip)
     command -v python3 &>/dev/null || BREW_TO_INSTALL+=(python3)
     if [ ${#BREW_TO_INSTALL[@]} -gt 0 ]; then
         brew install "${BREW_TO_INSTALL[@]}"
@@ -131,6 +131,7 @@ else
     PKGS_TO_INSTALL=()
     command -v screen  &>/dev/null || PKGS_TO_INSTALL+=(screen)
     command -v unzip   &>/dev/null || PKGS_TO_INSTALL+=(unzip)
+    command -v zip     &>/dev/null || PKGS_TO_INSTALL+=(zip)
     command -v curl    &>/dev/null || PKGS_TO_INSTALL+=(curl)
     command -v python3 &>/dev/null || PKGS_TO_INSTALL+=(python3)
     if [ ${#PKGS_TO_INSTALL[@]} -gt 0 ]; then
@@ -370,6 +371,30 @@ if ! ls "$PLUGIN_DIR"/MythicMobs*.jar &>/dev/null 2>&1; then
     warn "    Puis place le jar dans $PLUGIN_DIR/"
 else
     ok "  MythicMobs deja present."
+fi
+
+# --- BlueMap (carte 3D web du monde) ---
+if ! ls "$PLUGIN_DIR"/BlueMap*.jar &>/dev/null 2>&1; then
+    info "  Telechargement de BlueMap..."
+    BLUEMAP_URL=$(curl -fsSL "https://api.modrinth.com/v2/project/bluemap/version?loaders=[\"paper\"]" \
+        | python3 -c "
+import sys, json
+versions = json.load(sys.stdin)
+for v in versions:
+    for f in v.get('files', []):
+        fname = f['filename'].lower()
+        if 'bluemap' in fname and '.jar' in fname:
+            print(f['url'])
+            sys.exit(0)
+" 2>/dev/null)
+    if [ -n "$BLUEMAP_URL" ]; then
+        curl -fsSL -L -o "$PLUGIN_DIR/BlueMap.jar" "$BLUEMAP_URL"
+        ok "  BlueMap.jar"
+    else
+        warn "  BlueMap: telecharge depuis https://modrinth.com/plugin/bluemap"
+    fi
+else
+    ok "  BlueMap deja present."
 fi
 
 # --- Terra (biomes custom) ---

@@ -1,0 +1,134 @@
+# ================================================================
+#  Biome : Prairie Enchantée
+#  Remplace une partie des Meadow vanilla.
+#  Caractéristiques : herbe arc-en-ciel (teintures), fleurs magiques
+#  qui brillent la nuit (glowberries), fées (particules), cercles
+#  de champignons "fairy ring" avec loot bonus, vent permanent.
+#  Easter egg : "Le Miroir des Souhaits" — une structure de quartz
+#  entourée d'eau avec un item unique au centre : "Fleur d'Éternité"
+#  (décorative) et un coffre contenant du loot enchanté aléatoire.
+# ================================================================
+
+id: "ENCHANTED_MEADOW"
+extends: "MEADOW"
+
+terrain:
+  sampler:
+    type: EXPRESSION
+    expression: "0.1 + (noise(x*0.025, z*0.025) * 0.5)"
+
+  noise:
+    - type: OPEN_SIMPLEX_2
+      frequency: 0.025
+      amplitude: 10
+
+surface:
+  top: GRASS_BLOCK
+  under: DIRT
+  filler: STONE
+
+palette:
+  - GRASS_BLOCK: 4
+  - PODZOL: 1
+  - MOSSY_COBBLESTONE: 1
+
+ores:
+  - material: EMERALD_ORE
+    size: 3
+    frequency: 6
+    min-y: 10
+    max-y: 80
+  - material: AMETHYST_CLUSTER
+    size: 2
+    frequency: 4
+    min-y: 0
+    max-y: 64
+
+features:
+  - type: TREE
+    iterations: 3
+    distribution:
+      type: NOISE
+      frequency: 0.04
+    feature:
+      type: SIMPLE_TREE
+      trunk:
+        material: OAK_LOG
+        height: 5
+      leaves:
+        material: OAK_LEAVES
+        radius: 3
+
+  - type: FLORA
+    iterations: 25
+    distribution:
+      type: NOISE
+      frequency: 0.30
+    feature:
+      type: SIMPLE
+      blocks:
+        - POPPY: 5
+        - DANDELION: 5
+        - BLUE_ORCHID: 4
+        - ALLIUM: 4
+        - AZURE_BLUET: 4
+        - CORNFLOWER: 5
+        - OXEYE_DAISY: 4
+        - PINK_TULIP: 3
+        - WHITE_TULIP: 3
+        - LILAC: 2
+        - ROSE_BUSH: 2
+        - PEONY: 2
+        - GLOW_BERRIES: 3
+        - SHORT_GRASS: 10
+        - TALL_GRASS: 6
+
+  - type: FLORA
+    iterations: 2
+    distribution:
+      type: NOISE
+      frequency: 0.03
+    feature:
+      type: SIMPLE
+      blocks:
+        - GLOW_LICHEN: 1
+        - END_ROD: 1
+
+structures:
+  - id: FAIRY_RING
+    frequency: 0.01
+    y: surface
+  - id: WISHING_MIRROR
+    frequency: 0.0005
+    y: surface
+  - id: ENCHANTED_WELL
+    frequency: 0.003
+    y: surface
+
+spawning:
+  - entity: BEE
+    weight: 15
+    min-group: 2
+    max-group: 5
+  - entity: RABBIT
+    weight: 10
+    min-group: 2
+    max-group: 4
+  - entity: FOX
+    weight: 5
+    min-group: 1
+    max-group: 2
+  - entity: HORSE
+    weight: 4
+    min-group: 1
+    max-group: 3
+
+ambient:
+  sound: AMBIENT_CAVE
+  particles:
+    - type: END_ROD
+      frequency: 0.002
+    - type: SPELL_WITCH
+      frequency: 0.001
+    - type: VILLAGER_HAPPY
+      frequency: 0.003

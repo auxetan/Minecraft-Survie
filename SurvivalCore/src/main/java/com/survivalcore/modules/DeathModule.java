@@ -6,6 +6,7 @@ import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -159,6 +160,11 @@ public class DeathModule implements CoreModule, Listener {
         String coords = "§bX:" + deathLoc.getBlockX() + " Y:" + deathLoc.getBlockY() + " Z:" + deathLoc.getBlockZ();
         player.sendMessage("§c§l☠ Tu es mort ! §7Ton sac est en " + coords);
 
+        // 11. Drop tête du joueur si tué par un autre joueur (PvP)
+        if (player.getKiller() != null) {
+            dropPlayerHead(player, deathLoc);
+        }
+
         // 9. Stocker la position pour l'action bar post-respawn
         pendingDeathLocations.put(uuid, deathLoc);
 
@@ -196,6 +202,23 @@ public class DeathModule implements CoreModule, Listener {
                 }
             }.runTaskTimer(plugin, 20L, 20L); // Start after 1s, repeat every 1s
         }
+    }
+
+    // ─── Tête du Joueur (PvP) ───────────────────────────────────
+
+    private void dropPlayerHead(Player victim, Location loc) {
+        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta meta = (SkullMeta) head.getItemMeta();
+        meta.setOwningPlayer(victim);
+        meta.displayName(net.kyori.adventure.text.Component.text(
+                "§6☠ Tête de §e" + victim.getName()));
+        meta.lore(java.util.List.of(
+                net.kyori.adventure.text.Component.text("§8Trophée de PvP"),
+                net.kyori.adventure.text.Component.text("§7Tué par §c" + victim.getKiller().getName())
+        ));
+        head.setItemMeta(meta);
+        loc.getWorld().dropItemNaturally(loc, head);
+        victim.getKiller().sendMessage("§6☠ La tête de §e" + victim.getName() + " §6est tombée !");
     }
 
     // ─── Sac de Mort ────────────────────────────────────────────

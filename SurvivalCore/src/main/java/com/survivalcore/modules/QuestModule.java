@@ -5,6 +5,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
+import org.bukkit.block.Biome;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -205,6 +206,10 @@ public class QuestModule implements CoreModule, Listener {
             q.progress = Math.min(q.progress + amount, q.definition.amount);
             saveQuestProgressAsync(uuid, q);
 
+            // Notify ProgressModule to refresh boss bars
+            ProgressModule pm = plugin.getModule(ProgressModule.class);
+            if (pm != null) pm.notifyQuestProgress(uuid);
+
             if (q.progress >= q.definition.amount) {
                 q.completed = true;
                 completeQuest(player, uuid, q);
@@ -243,6 +248,8 @@ public class QuestModule implements CoreModule, Listener {
             player.sendMessage("§a§l✦ QUÊTE ACCOMPLIE ! §7" + quest.definition.display);
             player.sendMessage("§7Récompense : §6+" + (int) quest.definition.rewardMoney + " ✦ §7| §b+" + quest.definition.rewardXp + " XP");
             player.playSound(player.getLocation(), org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+            ProgressModule pm = plugin.getModule(ProgressModule.class);
+            if (pm != null) pm.showFlashBar(player, "✦ Quête accomplie : " + quest.definition.display);
 
             // Broadcast via AnnouncerModule
             AnnouncerModule announcer = plugin.getModule(AnnouncerModule.class);
@@ -345,6 +352,32 @@ public class QuestModule implements CoreModule, Listener {
         if (distance >= 1.0) {
             lastLocations.put(uuid, player.getLocation().clone());
             progressQuest(uuid, "TRAVEL", "WALK", (int) distance);
+        }
+
+        // EXPLORE — vérifie le biome actuel du joueur (une fois par seconde max)
+        checkBiomeExplore(player, uuid);
+    }
+
+    private void checkBiomeExplore(Player player, UUID uuid) {
+        // Only check if the player has an EXPLORE quest
+        List<ActiveQuest> quests = playerQuests.get(uuid);
+        if (quests == null) return;
+        boolean hasExplore = quests.stream().anyMatch(q -> !q.completed && q.definition.type.equals("EXPLORE"));
+        if (!hasExplore) return;
+
+        try {
+            org.bukkit.Location loc = player.getLocation();
+            Biome biome = loc.getWorld().getBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+            String biomeKey = biome.getKey().getKey().toLowerCase();
+            // Also try the full namespaced key for Terra custom biomes (e.g. "survivalcraft/crystalline_caves")
+            progressQuest(uuid, "EXPLORE", biomeKey, 1);
+            // Terra biomes sometimes use namespace/id format — try just the last segment
+            String[] parts = biomeKey.split("[/:]");
+            if (parts.length > 1) {
+                progressQuest(uuid, "EXPLORE", parts[parts.length - 1], 1);
+            }
+        } catch (Exception ignored) {
+            // Biome lookup can occasionally fail; just skip
         }
     }
 

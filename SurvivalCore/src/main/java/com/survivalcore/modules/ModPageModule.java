@@ -98,6 +98,28 @@ public class ModPageModule implements CoreModule, Listener {
                     exchange.getResponseBody().close();
                 }
             });
+            // Endpoint /resourcepack — sert faithless.zip pour les clients Minecraft
+            httpServer.createContext("/resourcepack", exchange -> {
+                File zipFile = new File(plugin.getDataFolder().getParentFile().getParentFile(), "faithless.zip");
+                if (!zipFile.exists()) {
+                    exchange.sendResponseHeaders(404, 0);
+                    exchange.getResponseBody().close();
+                    return;
+                }
+                try {
+                    byte[] data = Files.readAllBytes(zipFile.toPath());
+                    exchange.getResponseHeaders().add("Content-Type", "application/zip");
+                    exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=\"faithless.zip\"");
+                    exchange.sendResponseHeaders(200, data.length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(data);
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().log(Level.WARNING, "Erreur lors du service du pack de textures", e);
+                    exchange.sendResponseHeaders(500, 0);
+                    exchange.getResponseBody().close();
+                }
+            });
             // Redirection racine vers /mods
             httpServer.createContext("/", exchange -> {
                 exchange.getResponseHeaders().add("Location", "/mods");

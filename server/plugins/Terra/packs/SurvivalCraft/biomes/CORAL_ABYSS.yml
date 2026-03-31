@@ -1,0 +1,117 @@
+# ================================================================
+#  Biome : Abysses Coralliennes
+#  Remplace une partie de l'Ocean Profond.
+#  Caractéristiques : coraux géants illuminés, plaines sous-marines
+#  avec prismarine naturelle, ruines de temples engloutis, trésors
+#  cachés dans des coffres au fond.
+#  Easter egg : "Le Phare Oublié" — une tour de prismarine avec un
+#  bloc de beacon au sommet, entourée de gardiens d'élite.
+# ================================================================
+
+id: "CORAL_ABYSS"
+extends: "DEEP_OCEAN"
+
+terrain:
+  sampler:
+    type: EXPRESSION
+    expression: "-0.6 + (noise(x*0.015, z*0.015) * 0.4)"
+
+  noise:
+    - type: OPEN_SIMPLEX_2
+      frequency: 0.015
+      amplitude: 12
+
+surface:
+  top: SAND
+  under: SANDSTONE
+  filler: STONE
+
+palette:
+  - PRISMARINE: 5
+  - SEA_LANTERN: 1
+  - DARK_PRISMARINE: 3
+
+ores:
+  - material: HEART_OF_THE_SEA
+    size: 1
+    frequency: 1
+    min-y: -40
+    max-y: -20
+  - material: PRISMARINE_CRYSTALS
+    size: 4
+    frequency: 8
+    min-y: -50
+    max-y: 60
+
+features:
+  - type: FLORA
+    iterations: 12
+    distribution:
+      type: NOISE
+      frequency: 0.20
+    feature:
+      type: SIMPLE
+      blocks:
+        - BRAIN_CORAL: 3
+        - FIRE_CORAL: 3
+        - TUBE_CORAL: 3
+        - BUBBLE_CORAL: 3
+        - HORN_CORAL: 2
+        - SEA_PICKLE: 4
+        - KELP: 5
+        - SEAGRASS: 6
+
+  - type: FLORA
+    iterations: 3
+    distribution:
+      type: NOISE
+      frequency: 0.05
+    feature:
+      type: SIMPLE
+      blocks:
+        - SEA_LANTERN: 1
+        - PRISMARINE_BRICKS: 1
+
+structures:
+  - id: SUNKEN_TEMPLE
+    frequency: 0.003
+    y: surface
+  - id: CORAL_LIGHTHOUSE
+    frequency: 0.0008
+    y: surface
+  - id: ABYSS_TREASURE_CHEST
+    frequency: 0.005
+    y: surface
+
+spawning:
+  - entity: GUARDIAN
+    weight: 10
+    min-group: 2
+    max-group: 5
+  - entity: DROWNED
+    weight: 8
+    min-group: 1
+    max-group: 3
+  - entity: COD
+    weight: 12
+    min-group: 3
+    max-group: 8
+  - entity: DOLPHIN
+    weight: 3
+    min-group: 2
+    max-group: 4
+
+mythic-spawns:
+  - mob: NoyeAncient
+    weight: 4
+    conditions:
+      - type: LIGHT
+        max: 7
+
+ambient:
+  sound: AMBIENT_UNDERWATER_LOOP
+  particles:
+    - type: BUBBLE
+      frequency: 0.05
+    - type: DRIPPING_WATER
+      frequency: 0.01

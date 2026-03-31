@@ -1,0 +1,122 @@
+# ================================================================
+#  Biome : Royaume des Ombres
+#  Remplace une partie des Warped Forest du Nether.
+#  Caractéristiques : terrain noir comme de la void, champignons
+#  violets géants, cristaux soul sand, portails brisés, structures
+#  secrètes avec loot rare.
+#  Easter egg : une pièce cachée derrière un mur de basalte contient
+#  une note ("Bienvenue dans l'oubli...") et un coffre avec un item
+#  unique "Éclat d'Ombre".
+# ================================================================
+
+id: "SHADOW_REALM"
+extends: "WARPED_FOREST"
+
+terrain:
+  sampler:
+    type: EXPRESSION
+    expression: "-0.3 + (noise(x*0.02, z*0.02) * 0.9)"
+
+  noise:
+    - type: OPEN_SIMPLEX_2
+      frequency: 0.02
+      amplitude: 18
+
+surface:
+  top: SOUL_SOIL
+  under: BASALT
+  filler: BLACKSTONE
+
+palette:
+  - BLACKSTONE: 6
+  - BASALT: 4
+  - SOUL_SOIL: 2
+
+ores:
+  - material: AMETHYST_CLUSTER
+    size: 5
+    frequency: 6
+    min-y: 20
+    max-y: 80
+  - material: ANCIENT_DEBRIS
+    size: 2
+    frequency: 2
+    min-y: 15
+    max-y: 21
+  - material: GOLD_ORE
+    size: 9
+    frequency: 10
+    min-y: 10
+    max-y: 40
+
+features:
+  - type: TREE
+    iterations: 2
+    distribution:
+      type: NOISE
+      frequency: 0.08
+    feature:
+      type: SIMPLE_TREE
+      trunk:
+        material: BLACKSTONE
+        height: 8
+      leaves:
+        material: WARPED_WART_BLOCK
+        radius: 3
+
+  - type: FLORA
+    iterations: 8
+    distribution:
+      type: NOISE
+      frequency: 0.15
+    feature:
+      type: SIMPLE
+      blocks:
+        - WARPED_FUNGUS: 3
+        - CRIMSON_FUNGUS: 1
+        - SOUL_FIRE: 1
+
+structures:
+  - id: SHADOW_PORTAL_RUIN
+    frequency: 0.004
+    y: surface
+  - id: SHADOW_SECRET_ROOM
+    frequency: 0.001
+    y: surface
+
+spawning:
+  - entity: ENDERMAN
+    weight: 8
+    min-group: 2
+    max-group: 4
+    conditions:
+      - type: LIGHT
+        max: 7
+  - entity: PIGLIN
+    weight: 4
+    min-group: 1
+    max-group: 3
+  - entity: BLAZE
+    weight: 2
+    min-group: 1
+    max-group: 2
+
+mythic-spawns:
+  - mob: ZombieCorrompu
+    weight: 3
+    conditions:
+      - type: LIGHT
+        max: 0
+  - mob: EndermanVide
+    weight: 5
+    conditions:
+      - type: LIGHT
+        max: 0
+
+ambient:
+  sound: AMBIENT_SOUL_SAND_VALLEY_MOOD
+  particles:
+    - type: SOUL
+      frequency: 0.003
+    - type: WARPED_SPORE
+      frequency: 0.008

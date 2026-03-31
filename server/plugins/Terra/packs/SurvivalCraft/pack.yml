@@ -5,9 +5,9 @@
 # ================================================================
 
 id: "SurvivalCraft"
-version: "2.0.0"
+version: "3.0.0"
 author: "SurvivalCraft Team"
-description: "8 biomes custom : Cavernes Cristallines, Forêt Bioluminescente, Désert Doré, Hauts-Plateaux Volcaniques, Wasteland Glacé, Jungle Ancienne, Vallée Sakura, Royaume des Champignons"
+description: "11 biomes custom : Cavernes Cristallines, Forêt Bioluminescente, Désert Doré, Hauts-Plateaux Volcaniques, Wasteland Glacé, Jungle Ancienne, Vallée Sakura, Royaume des Champignons, Royaume des Ombres, Abysses Coralliennes, Prairie Enchantée"
 
 # Étend le pack overworld officiel de Terra (inclut tous les biomes vanilla)
 extends: "OVERWORLD"
@@ -71,4 +71,22 @@ biomeProvider:
   - type: "REPLACE"
     from: "minecraft:mushroom_fields"
     to: "MUSHROOM_KINGDOM"
+    chance: 0.50
+
+  # Warped Forest (Nether) → Royaume des Ombres (45%)
+  - type: "REPLACE"
+    from: "minecraft:warped_forest"
+    to: "SHADOW_REALM"
+    chance: 0.45
+
+  # Deep Ocean → Abysses Coralliennes (35%)
+  - type: "REPLACE"
+    from: "minecraft:deep_ocean"
+    to: "CORAL_ABYSS"
+    chance: 0.35
+
+  # Meadow → Prairie Enchantée (50%)
+  - type: "REPLACE"
+    from: "minecraft:meadow"
+    to: "ENCHANTED_MEADOW"
     chance: 0.50

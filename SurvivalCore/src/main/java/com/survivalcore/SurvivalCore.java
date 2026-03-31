@@ -61,6 +61,7 @@ public final class SurvivalCore extends JavaPlugin {
         registerModule(new JobModule());
         registerModule(new SkillModule());
         registerModule(new QuestModule());
+        registerModule(new ProgressModule());
         registerModule(new WeeklyModule());
         registerModule(new ShopModule());
         registerModule(new AuctionHouseModule());

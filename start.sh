@@ -37,6 +37,14 @@ ok()    { echo -e "${GREEN}[OK]${NC}    $*"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 
+# ── IP locale (portable) — détectée tôt pour le pack de textures ─
+if [ "$OS" = "Darwin" ]; then
+    LOCAL_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "127.0.0.1")"
+else
+    LOCAL_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+fi
+MODPAGE_PORT=8080
+
 # ── Verif prerequis ─────────────────────────────────────────────
 command -v java &>/dev/null   || error "Java non trouve. Lance d'abord : ./setup.sh"
 command -v screen &>/dev/null || error "screen non trouve. Lance d'abord : ./setup.sh"
@@ -98,6 +106,36 @@ PLUGIN_JAR=$(ls "$SCRIPT_DIR/SurvivalCore/build/libs/"SurvivalCore-*.jar 2>/dev/
 if [ -n "$PLUGIN_JAR" ]; then
     cp "$PLUGIN_JAR" "$PLUGIN_DIR/"
     ok "Plugin deploye : $(basename "$PLUGIN_JAR")"
+fi
+
+# ── Pack de textures Faithless — zip + SHA1 + server.properties ─
+FAITHLESS_DIR="$SCRIPT_DIR/Faithless"
+FAITHLESS_ZIP="$SERVER_DIR/faithless.zip"
+if [ -d "$FAITHLESS_DIR" ]; then
+    info "Compression du pack de textures Faithless..."
+    rm -f "$FAITHLESS_ZIP"
+    (cd "$FAITHLESS_DIR" && zip -r "$FAITHLESS_ZIP" . -x "*.DS_Store" -x "__MACOSX/*" > /dev/null 2>&1)
+    if [ "$OS" = "Darwin" ]; then
+        FAITHLESS_SHA1=$(shasum -a 1 "$FAITHLESS_ZIP" | awk '{print $1}')
+    else
+        FAITHLESS_SHA1=$(sha1sum "$FAITHLESS_ZIP" | awk '{print $1}')
+    fi
+    # URL du pack — utilise PUBLIC_RP_URL si défini (tunnnel HTTP), sinon IP locale
+    RP_URL="${PUBLIC_RP_URL:-http://${LOCAL_IP}:${MODPAGE_PORT}/resourcepack}"
+    # Mettre à jour server.properties (supprimer les anciens champs resource-pack)
+    PROPS="$SERVER_DIR/server.properties"
+    grep -v "^resource-pack" "$PROPS" > "$PROPS.tmp"
+    cat >> "$PROPS.tmp" << RPEOF
+resource-pack=$RP_URL
+resource-pack-sha1=$FAITHLESS_SHA1
+resource-pack-prompt=\u00a7b\u2756 \u00a7fPack de textures officiel SurvivalCraft
+require-resource-pack=false
+RPEOF
+    mv "$PROPS.tmp" "$PROPS"
+    ok "Pack de textures : $RP_URL"
+    ok "SHA1 : $FAITHLESS_SHA1"
+else
+    warn "Dossier Faithless/ introuvable — pack de textures non configuré."
 fi
 
 # ── Demarrage du serveur Minecraft ──────────────────────────────
@@ -163,13 +201,6 @@ if [ -f "$PLAYIT_BIN" ]; then
 else
     warn "Playit.gg non installe. Lance ./setup.sh pour l'installer."
     warn "Sans Playit.gg, seuls les joueurs sur ton reseau local peuvent rejoindre."
-fi
-
-# ── IP locale (portable) ─────────────────────────────────────────
-if [ "$OS" = "Darwin" ]; then
-    LOCAL_IP="$(ipconfig getifaddr en0 2>/dev/null || echo "localhost")"
-else
-    LOCAL_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 fi
 
 # ── Resume ──────────────────────────────────────────────────────
