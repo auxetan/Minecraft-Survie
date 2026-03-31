@@ -1,6 +1,7 @@
 package com.survivalcore.modules;
 
 import com.survivalcore.SurvivalCore;
+import com.survivalcore.ui.GuiBackground;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
@@ -135,7 +136,7 @@ public class SkillModule implements CoreModule, Listener {
         int unlockedCount = owned.size();
 
         Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §bArbre de Compétences §8✦"))
+                .title(GuiBackground.SKILLS.title("§8✦ §bArbre de Compétences §8✦"))
                 .rows(6)
                 .disableAllInteractions()
                 .create();

@@ -364,6 +364,69 @@ else
     ok "  Simple Voice Chat deja present."
 fi
 
+# --- CrazyAuctions (hôtel des ventes open source, MIT) ---
+if ! ls "$PLUGIN_DIR"/CrazyAuctions*.jar &>/dev/null 2>&1; then
+    info "  Telechargement de CrazyAuctions..."
+    CA_URL=$(curl -fsSL "https://api.modrinth.com/v2/project/crazyauctions/version?loaders=[\"paper\"]" \
+        | python3 -c "
+import sys, json
+versions = json.load(sys.stdin)
+for v in versions:
+    for f in v.get('files', []):
+        if '.jar' in f['filename'].lower():
+            print(f['url'])
+            sys.exit(0)
+" 2>/dev/null)
+    if [ -n "$CA_URL" ]; then
+        curl -fsSL -L -o "$PLUGIN_DIR/CrazyAuctions.jar" "$CA_URL"
+        ok "  CrazyAuctions.jar (hotel des ventes open source)"
+    else
+        warn "  CrazyAuctions: telecharge depuis https://modrinth.com/plugin/crazyauctions"
+    fi
+else
+    ok "  CrazyAuctions deja present."
+fi
+
+# --- DiscordSRV (pont Minecraft <-> Discord, GPL-3.0) ---
+if ! ls "$PLUGIN_DIR"/DiscordSRV*.jar &>/dev/null 2>&1; then
+    info "  Telechargement de DiscordSRV..."
+    DSRV_TAG=$(curl -fsSL "https://api.github.com/repos/DiscordSRV/DiscordSRV/releases/latest" \
+        | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])" 2>/dev/null)
+    if [ -n "$DSRV_TAG" ]; then
+        curl -fsSL -L -o "$PLUGIN_DIR/DiscordSRV.jar" \
+            "https://github.com/DiscordSRV/DiscordSRV/releases/download/${DSRV_TAG}/DiscordSRV-Build-${DSRV_TAG#v}.jar" \
+            2>/dev/null || warn "  DiscordSRV: echec, telecharge depuis https://github.com/DiscordSRV/DiscordSRV/releases"
+        ok "  DiscordSRV.jar (Minecraft <-> Discord)"
+    else
+        warn "  DiscordSRV: telecharge depuis https://github.com/DiscordSRV/DiscordSRV/releases"
+    fi
+else
+    ok "  DiscordSRV deja present."
+fi
+
+# --- LifestealZ (vol de coeurs en PvP, GPL-3.0) ---
+if ! ls "$PLUGIN_DIR"/LifeStealZ*.jar &>/dev/null 2>&1; then
+    info "  Telechargement de LifestealZ..."
+    LSZ_URL=$(curl -fsSL "https://api.modrinth.com/v2/project/lifestealz/version?loaders=[\"paper\"]" \
+        | python3 -c "
+import sys, json
+versions = json.load(sys.stdin)
+for v in versions:
+    for f in v.get('files', []):
+        if '.jar' in f['filename'].lower():
+            print(f['url'])
+            sys.exit(0)
+" 2>/dev/null)
+    if [ -n "$LSZ_URL" ]; then
+        curl -fsSL -L -o "$PLUGIN_DIR/LifeStealZ.jar" "$LSZ_URL"
+        ok "  LifeStealZ.jar (tuer un joueur = voler un coeur)"
+    else
+        warn "  LifestealZ: telecharge depuis https://modrinth.com/plugin/lifestealz"
+    fi
+else
+    ok "  LifestealZ deja present."
+fi
+
 # --- MythicMobs (premium — avertissement) ---
 if ! ls "$PLUGIN_DIR"/MythicMobs*.jar &>/dev/null 2>&1; then
     warn "  MythicMobs : plugin PREMIUM. Telecharge manuellement sur"

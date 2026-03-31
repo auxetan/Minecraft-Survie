@@ -1,6 +1,7 @@
 package com.survivalcore.modules;
 
 import com.survivalcore.SurvivalCore;
+import com.survivalcore.ui.GuiBackground;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
@@ -59,7 +60,7 @@ public class MenuModule implements CoreModule, Listener {
 
     public void openMainMenu(Player player) {
         Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §bSurvival Menu §8✦"))
+                .title(GuiBackground.MENU.title("§8✦ §bSurvival Menu §8✦"))
                 .rows(6)
                 .disableAllInteractions()
                 .create();
@@ -426,7 +427,7 @@ public class MenuModule implements CoreModule, Listener {
 
         var quests = quest.getPlayerQuests(player.getUniqueId());
         Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §eQuêtes du Jour §8✦"))
+                .title(GuiBackground.QUEST.title("§8✦ §eQuêtes du Jour §8✦"))
                 .rows(3)
                 .disableAllInteractions()
                 .create();
@@ -466,7 +467,7 @@ public class MenuModule implements CoreModule, Listener {
         if (weekly == null) return;
 
         Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §dMission Hebdo §8✦"))
+                .title(GuiBackground.QUEST.title("§8✦ §dMission Hebdo §8✦"))
                 .rows(3)
                 .disableAllInteractions()
                 .create();

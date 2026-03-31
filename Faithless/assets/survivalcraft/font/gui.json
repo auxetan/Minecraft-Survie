@@ -1,0 +1,77 @@
+{
+  "providers": [
+    {
+      "_info": "=== NegativeSpaceFont (AmberWat - public domain) ===",
+      "_info2": "Space characters with custom advance widths for pixel-perfect glyph positioning.",
+      "_info3": "Negative advance = shift rendering LEFT; positive = shift RIGHT.",
+      "type": "space",
+      "advances": {
+        "\uF001":  1,  "\uF002":  2,  "\uF003":  3,  "\uF004":  4,
+        "\uF005":  5,  "\uF006":  6,  "\uF007":  7,  "\uF008":  8,
+        "\uF009":  9,  "\uF00A": 10,  "\uF00B": 16,  "\uF00C": 32,
+        "\uF00D": 64,  "\uF00E":128,  "\uF00F":256,
+
+        "\uF0F1": -1,  "\uF0F2": -2,  "\uF0F3": -3,  "\uF0F4": -4,
+        "\uF0F5": -5,  "\uF0F6": -6,  "\uF0F7": -7,  "\uF0F8": -8,
+        "\uF0F9": -9,  "\uF0FA":-10,  "\uF0FB":-16,  "\uF0FC":-32,
+        "\uF0FD":-64,  "\uF0FE":-128, "\uF0FF":-256
+      }
+    },
+    {
+      "_info": "=== SurvivalCraft GUI Backgrounds ===",
+      "_info2": "Background textures for custom inventory GUIs (Paladium style).",
+      "_info3": "height=256 ascent=22 aligns over a 6-row chest inventory title bar.",
+      "_info4": "PNG files must be 512x256 pixels (or 352x168 for 6-row chest match).",
+      "_info5": "Place PNGs in: Faithless/assets/survivalcraft/textures/gui/",
+      "_info6": "Prepend shift char \\uF0FC (-32px) then \\uF0FB (-16px) to align left edge.",
+
+      "type": "bitmap",
+      "file": "survivalcraft:gui/market_bg.png",
+      "ascent": 22,
+      "height": 256,
+      "chars": ["\uEA00"]
+    },
+    {
+      "type": "bitmap",
+      "file": "survivalcraft:gui/menu_bg.png",
+      "ascent": 22,
+      "height": 256,
+      "chars": ["\uEA01"]
+    },
+    {
+      "type": "bitmap",
+      "file": "survivalcraft:gui/quest_bg.png",
+      "ascent": 22,
+      "height": 256,
+      "chars": ["\uEA02"]
+    },
+    {
+      "type": "bitmap",
+      "file": "survivalcraft:gui/shop_bg.png",
+      "ascent": 22,
+      "height": 256,
+      "chars": ["\uEA03"]
+    },
+    {
+      "type": "bitmap",
+      "file": "survivalcraft:gui/auction_bg.png",
+      "ascent": 22,
+      "height": 256,
+      "chars": ["\uEA04"]
+    },
+    {
+      "type": "bitmap",
+      "file": "survivalcraft:gui/skills_bg.png",
+      "ascent": 22,
+      "height": 256,
+      "chars": ["\uEA05"]
+    },
+    {
+      "type": "bitmap",
+      "file": "survivalcraft:gui/leaderboard_bg.png",
+      "ascent": 22,
+      "height": 256,
+      "chars": ["\uEA06"]
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+SurvivalCraft — Custom GUI Background Textures
+================================================
+
+Technique: bitmap font glyph injected into Bukkit inventory title via Adventure API.
+The PNG below is rendered as a CHARACTER in the inventory title bar, covering the entire GUI.
+
+REQUIRED PNG FILES — place all in this folder:
+  market_bg.png       — /marché, /ah, Auction House
+  menu_bg.png         — /menu, main navigation menu
+  quest_bg.png        — /quetes, daily quests
+  shop_bg.png         — /shop, admin shop
+  auction_bg.png      — /ah sell, auction listing
+  skills_bg.png       — /competences, skill tree
+  leaderboard_bg.png  — /classement, leaderboards
+
+PIXEL DIMENSIONS (CRITICAL):
+  Width  : 352 px   (176 blocks × 2px per block — matches 9-wide inventory)
+  Height : 168 px   (84 blocks × 2px — matches 6-row chest height incl. title bar)
+  Format : PNG-32 (RGBA, transparent background where slots should show through)
+  Scale  : Render at 2× pixel scale (Minecraft's GUI scale default)
+
+DESIGN GUIDELINES (Paladium style):
+  - Dark semi-transparent background: #1a1a1a (alpha ~240/255)
+  - Title bar area (top ~20px): slightly lighter, e.g. #252525
+  - Green accent for active buttons: #00cc00 (like Paladium's BUY button)
+  - Red accent for destructive actions: #cc2222
+  - Item slot grid area: TRANSPARENT (the actual inventory slots show through)
+    → Leave a 162×54 px (or 162×108 for 6-row) transparent window
+      at position x=7 y=18 for slots to be visible
+  - Search bar outline: draw outline at x=7 y=70 w=120 h=16 (adjust per menu)
+  - Borders and UI elements drawn in pure white (Minecraft tints with item color)
+
+FONT MAPPING (in survivalcraft:gui font):
+  \uEA00 → market_bg.png
+  \uEA01 → menu_bg.png
+  \uEA02 → quest_bg.png
+  \uEA03 → shop_bg.png
+  \uEA04 → auction_bg.png
+  \uEA05 → skills_bg.png
+  \uEA06 → leaderboard_bg.png
+
+NEGATIVE SPACE CHARS (in survivalcraft:gui font, for positioning):
+  \uF0FC = -32px (shift left 32px)
+  \uF0FB = -16px (shift left 16px)
+  \uF0F8 = -8px  (shift left 8px)
+  \uF008 = +8px  (shift right 8px)
+
+TITLE COMPONENT FORMULA (used automatically by GuiBackground.java):
+  prefix = \uF0FC\uF0F8  (shift: -32 + -8 = -40px — aligns image to left edge of GUI)
+  The Java code builds: Component.text(prefix + bgChar).font(Key.key("survivalcraft","gui"))
+
+REFERENCES:
+  https://github.com/AmberWat/NegativeSpaceFont
+  https://github.com/Brikster/glyphs
+  https://minecraft.wiki/w/Resource_pack#Fonts

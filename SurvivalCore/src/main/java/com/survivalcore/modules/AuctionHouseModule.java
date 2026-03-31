@@ -1,6 +1,7 @@
 package com.survivalcore.modules;
 
 import com.survivalcore.SurvivalCore;
+import com.survivalcore.ui.GuiBackground;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
@@ -99,7 +100,7 @@ public class AuctionHouseModule implements CoreModule {
 
     private void renderBrowseGui(Player player, List<AuctionEntry> entries) {
         PaginatedGui gui = Gui.paginated()
-                .title(Component.text("§8✦ §6Hôtel des Enchères §8✦"))
+                .title(GuiBackground.MARKET.title("§8✦ §6Hôtel des Enchères §8✦"))
                 .rows(6)
                 .pageSize(36)
                 .disableAllInteractions()
@@ -168,7 +169,7 @@ public class AuctionHouseModule implements CoreModule {
         }
 
         Gui confirmGui = Gui.gui()
-                .title(Component.text("§8✦ §6Confirmer l'enchère §8✦"))
+                .title(GuiBackground.AUCTION.title("§8✦ §6Confirmer l'enchère §8✦"))
                 .rows(3)
                 .disableAllInteractions()
                 .create();
@@ -237,7 +238,7 @@ public class AuctionHouseModule implements CoreModule {
 
     private void renderMyAuctionsGui(Player player, List<AuctionEntry> entries) {
         PaginatedGui gui = Gui.paginated()
-                .title(Component.text("§8✦ §6Mes Enchères §8✦"))
+                .title(GuiBackground.MARKET.title("§8✦ §6Mes Enchères §8✦"))
                 .rows(6)
                 .pageSize(36)
                 .disableAllInteractions()
@@ -318,7 +319,7 @@ public class AuctionHouseModule implements CoreModule {
         String uuid = player.getUniqueId().toString();
 
         PaginatedGui gui = Gui.paginated()
-                .title(Component.text("§8✦ §eCollecter §8✦"))
+                .title(GuiBackground.MARKET.title("§8✦ §eCollecter §8✦"))
                 .rows(6)
                 .pageSize(36)
                 .disableAllInteractions()

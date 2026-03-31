@@ -1,6 +1,7 @@
 package com.survivalcore.modules;
 
 import com.survivalcore.SurvivalCore;
+import com.survivalcore.ui.GuiBackground;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
@@ -225,7 +226,7 @@ public class LeaderboardModule implements CoreModule, Listener {
 
     private void openLeaderboardGui(Player player, StatDef stat, List<LeaderEntry> entries, int statIndex) {
         Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §6Classement : " + stat.displayName + " §8✦"))
+                .title(GuiBackground.LEADERBOARD.title("§8✦ §6Classement : " + stat.displayName + " §8✦"))
                 .rows(6)
                 .disableAllInteractions()
                 .create();

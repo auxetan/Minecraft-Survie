@@ -1,6 +1,7 @@
 package com.survivalcore.modules;
 
 import com.survivalcore.SurvivalCore;
+import com.survivalcore.ui.GuiBackground;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
@@ -168,7 +169,7 @@ public class ShopModule implements CoreModule, Listener {
 
     public void openShopMain(Player player) {
         Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §6Shop §8✦"))
+                .title(GuiBackground.SHOP.title("§8✦ §6Shop §8✦"))
                 .rows(4)
                 .disableAllInteractions()
                 .create();
@@ -198,7 +199,7 @@ public class ShopModule implements CoreModule, Listener {
         if (eco == null) return;
 
         PaginatedGui gui = Gui.paginated()
-                .title(Component.text("§8✦ §6" + category.displayName + " §8✦"))
+                .title(GuiBackground.SHOP.title("§8✦ §6" + category.displayName + " §8✦"))
                 .rows(6)
                 .pageSize(36)
                 .disableAllInteractions()
