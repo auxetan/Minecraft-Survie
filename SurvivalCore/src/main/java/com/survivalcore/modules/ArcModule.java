@@ -343,7 +343,7 @@ public class ArcModule implements CoreModule, Listener {
         // EXPLORE_BIOME
         if (step.type.equals("EXPLORE_BIOME")) {
             Biome biome = player.getLocation().getBlock().getBiome();
-            if (biome.name().equalsIgnoreCase(step.target)) {
+            if (biome.getKey().getKey().equalsIgnoreCase(step.target)) {
                 progressArc(uuid, "EXPLORE_BIOME", step.target, 1);
             }
         }

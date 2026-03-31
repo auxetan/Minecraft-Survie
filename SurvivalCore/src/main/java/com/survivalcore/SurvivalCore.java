@@ -2,7 +2,9 @@ package com.survivalcore;
 
 import com.survivalcore.data.DatabaseManager;
 import com.survivalcore.modules.*;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -53,6 +55,7 @@ public final class SurvivalCore extends JavaPlugin {
     private void enableModules() {
         // Enregistrer tous les modules
         registerModule(new EconomyModule());
+        registerModule(new EventsModule());
         registerModule(new MenuModule());
         registerModule(new ClassModule());
         registerModule(new JobModule());
@@ -79,8 +82,11 @@ public final class SurvivalCore extends JavaPlugin {
             }
         }
 
-        // Commande admin
+        // Commandes core
         getCommand("admin").setExecutor(new AdminCommand());
+        getCommand("spawn").setExecutor(new SpawnCommand());
+        getCommand("lobby").setExecutor(new SpawnCommand());
+        getCommand("commandes").setExecutor(new CommandesCommand());
 
         getLogger().info("SurvivalCore — tous les modules sont chargés (" + modules.size() + " modules).");
     }
@@ -127,8 +133,90 @@ public final class SurvivalCore extends JavaPlugin {
                         sender.sendMessage("§cModule Weekly non disponible.");
                     }
                 }
-                default -> sender.sendMessage("§cCommande inconnue. Usage : /admin <reload|givemoney|setweekly>");
+                case "setspawn" -> {
+                    if (!(sender instanceof Player player)) {
+                        sender.sendMessage("§cCommande joueur uniquement.");
+                        return true;
+                    }
+                    Location loc = player.getLocation();
+                    getConfig().set("spawn.world", loc.getWorld().getName());
+                    getConfig().set("spawn.x", loc.getX());
+                    getConfig().set("spawn.y", loc.getY());
+                    getConfig().set("spawn.z", loc.getZ());
+                    getConfig().set("spawn.yaw", (double) loc.getYaw());
+                    getConfig().set("spawn.pitch", (double) loc.getPitch());
+                    saveConfig();
+                    sender.sendMessage("§a✦ Spawn défini à ta position actuelle.");
+                }
+                default -> sender.sendMessage("§cCommande inconnue. Usage : /admin <reload|givemoney|setweekly|setspawn>");
             }
+            return true;
+        }
+    }
+
+    // ─── Commande /spawn et /lobby ──────────────────────────────
+
+    private class SpawnCommand implements CommandExecutor {
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§cCommande joueur uniquement.");
+                return true;
+            }
+            // Utilise le spawn configuré (config.yml) ou le spawn du monde principal
+            Location spawn;
+            if (getConfig().isSet("spawn.world")) {
+                String worldName = getConfig().getString("spawn.world", "world");
+                double x = getConfig().getDouble("spawn.x", 0.5);
+                double y = getConfig().getDouble("spawn.y", 64);
+                double z = getConfig().getDouble("spawn.z", 0.5);
+                float yaw = (float) getConfig().getDouble("spawn.yaw", 0);
+                float pitch = (float) getConfig().getDouble("spawn.pitch", 0);
+                var world = Bukkit.getWorld(worldName);
+                spawn = world != null
+                        ? new Location(world, x, y, z, yaw, pitch)
+                        : player.getWorld().getSpawnLocation();
+            } else {
+                spawn = Bukkit.getWorlds().get(0).getSpawnLocation();
+            }
+            player.teleport(spawn);
+            player.sendMessage("§a✦ Téléporté au spawn !");
+            player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ENDERMAN_TELEPORT, 0.6f, 1.4f);
+            return true;
+        }
+    }
+
+    // ─── Commande /commandes ────────────────────────────────────
+
+    private class CommandesCommand implements CommandExecutor {
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            sender.sendMessage("§8§m─────────────────────────────────────");
+            sender.sendMessage("§6  ✦ §lCommandes SurvivalCraft §6✦");
+            sender.sendMessage("§8§m─────────────────────────────────────");
+            sender.sendMessage("§e§lNavigation");
+            sender.sendMessage("  §a/spawn §8— §7Retourner au spawn");
+            sender.sendMessage("  §a/menu §8— §7Menu principal");
+            sender.sendMessage("  §a/waypoint add <nom> §8— §7Ajouter un waypoint");
+            sender.sendMessage("  §a/deaths §8— §7Voir position de ta dernière mort");
+            sender.sendMessage("§e§lÉconomie & Commerce");
+            sender.sendMessage("  §a/balance §8[§7/bal§8] §8— §7Voir ton solde");
+            sender.sendMessage("  §a/pay <joueur> <montant> §8— §7Payer un joueur");
+            sender.sendMessage("  §a/shop §8— §7Boutique admin");
+            sender.sendMessage("  §a/ah §8[§7/hdv§8] §8— §7Hôtel des enchères joueurs");
+            sender.sendMessage("  §a/ah sell <prix> [durée_h] §8— §7Vendre un item aux enchères");
+            sender.sendMessage("  §a/vendre <prix> §8— §7Mettre un item sur le marché joueur");
+            sender.sendMessage("  §a/marche §8— §7Parcourir le marché joueur");
+            sender.sendMessage("§e§lPersonnage & Progression");
+            sender.sendMessage("  §a/classe §8— §7Choisir / voir ta classe");
+            sender.sendMessage("  §a/job §8— §7Choisir / voir ton métier");
+            sender.sendMessage("  §a/quetes §8— §7Quêtes journalières");
+            sender.sendMessage("  §a/classement §8— §7Classements du serveur");
+            sender.sendMessage("§e§lServeur");
+            sender.sendMessage("  §a/claim §8— §7Protéger un chunk");
+            sender.sendMessage("  §a/coffre-commun §8— §7Coffre commun (dépôt communautaire)");
+            sender.sendMessage("  §a/mods §8— §7Page de téléchargement des mods recommandés");
+            sender.sendMessage("§8§m─────────────────────────────────────");
             return true;
         }
     }

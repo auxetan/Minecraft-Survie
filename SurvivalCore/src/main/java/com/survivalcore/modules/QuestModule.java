@@ -21,11 +21,13 @@ import org.bukkit.event.inventory.BrewEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.event.inventory.FurnaceExtractEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
@@ -250,6 +252,10 @@ public class QuestModule implements CoreModule, Listener {
             }
         }
 
+        // Streak bonus via EventsModule
+        EventsModule events = plugin.getModule(EventsModule.class);
+        if (events != null) events.onQuestCompleted(uuid);
+
         saveQuestProgressAsync(uuid, quest);
     }
 
@@ -340,6 +346,35 @@ public class QuestModule implements CoreModule, Listener {
             lastLocations.put(uuid, player.getLocation().clone());
             progressQuest(uuid, "TRAVEL", "WALK", (int) distance);
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerFish(PlayerFishEvent event) {
+        if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) return;
+        org.bukkit.entity.Entity caught = event.getCaught();
+        if (!(caught instanceof org.bukkit.entity.Item item)) return;
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        Material type = item.getItemStack().getType();
+        // Track specific fish types OR "TREASURE" for any non-junk, non-fish catch
+        if (type == Material.COD || type == Material.SALMON
+                || type == Material.TROPICAL_FISH || type == Material.PUFFERFISH) {
+            progressQuest(uuid, "FISH", type.name(), item.getItemStack().getAmount());
+        } else if (type != Material.ROTTEN_FLESH && type != Material.BONE
+                && type != Material.STRING && type != Material.WATER_BUCKET
+                && type != Material.LEATHER_BOOTS && type != Material.BOWL
+                && type != Material.FISHING_ROD && type != Material.INK_SAC
+                && type != Material.LILY_PAD) {
+            // Anything else (books, saddles, nautilus shells, etc.) is "TREASURE"
+            progressQuest(uuid, "FISH", "TREASURE", 1);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onFurnaceExtract(FurnaceExtractEvent event) {
+        Player player = event.getPlayer();
+        String target = event.getItemType().name();
+        progressQuest(player.getUniqueId(), "SMELT", target, event.getItemAmount());
     }
 
     @EventHandler
