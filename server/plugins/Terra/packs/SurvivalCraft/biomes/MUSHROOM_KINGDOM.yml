@@ -1,0 +1,87 @@
+# ================================================================
+#  Biome : Royaume des Champignons
+#  Version améliorée des Mushroom Fields — champignons géants colorés,
+#  mycelium dense, lumitoiles, structures de village champignon.
+#  Safe zone : peu ou pas de mobs hostiles. Idéal pour baser.
+# ================================================================
+
+id: "MUSHROOM_KINGDOM"
+extends: "MUSHROOM_FIELDS"
+
+color:
+  water: "#7a2d7a"
+  fog: "#3d0050"
+  sky: "#5a1a6e"
+  grass: "#8c3a9e"
+  foliage: "#6d1f8a"
+
+sounds:
+  additions:
+  - "block.fungi.break"
+  mood:
+    sound: "block.shroomlight.break"
+    delay: 8000
+    range: 10
+
+flora:
+  density: 1.5
+  items:
+  - id: "RED_MUSHROOM"
+    weight: 100
+    threshold: 0.1
+  - id: "BROWN_MUSHROOM"
+    weight: 100
+    threshold: 0.1
+  - id: "CRIMSON_FUNGUS"
+    weight: 60
+    threshold: 0.3
+  - id: "WARPED_FUNGUS"
+    weight: 60
+    threshold: 0.3
+  - id: "SHROOMLIGHT"
+    weight: 20
+    threshold: 0.7
+
+surface:
+  top: "MYCELIUM"
+  filler: "DIRT"
+  ocean: "GRAVEL"
+
+trees:
+  density: 0.5
+  types:
+  - id: "HUGE_RED_MUSHROOM"
+    weight: 60
+  - id: "HUGE_BROWN_MUSHROOM"
+    weight: 60
+  - id: "OAK"
+    weight: 10
+
+ores:
+  SHROOMLIGHT:
+    size: 3
+    count: 4
+    minY: 60
+    maxY: 100
+
+structures:
+- id: "MUSHROOM_VILLAGE"
+  chance: 0.06
+- id: "GIANT_MUSHROOM_RING"
+  chance: 0.12
+- id: "MUSHROOM_SHRINE"
+  chance: 0.08
+
+mobs:
+  spawns:
+  vanilla:
+  - MOOSHROOM
+  - COW
+  - BAT
+
+# Très peu de mobs hostiles — zone presque sûre
+hostile_mobs: false
+
+terrain:
+  noiseMultiplier: 0.5
+  heightOffset: -3

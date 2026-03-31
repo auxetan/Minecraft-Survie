@@ -1,7 +1,9 @@
 # Pool de quêtes journalières
-# Chaque joueur reçoit 3 quêtes aléatoires par jour à minuit
+# Chaque joueur reçoit 3 quêtes aléatoires par jour (minuit heure réelle)
+# Types supportés : KILL, GATHER, CRAFT, TRAVEL, BREW, FISH, SMELT
 
 quests:
+  # ── KILL — Mobs communs ───────────────────────────────────
   kill_zombies:
     type: KILL
     target: ZOMBIE
@@ -29,6 +31,51 @@ quests:
     reward-money: 100
     reward-xp: 200
 
+  kill_spiders:
+    type: KILL
+    target: SPIDER
+    amount: 20
+    display: "Tue 20 Araignées"
+    difficulty: EASY
+    reward-money: 55
+    reward-xp: 110
+
+  kill_cave_spiders:
+    type: KILL
+    target: CAVE_SPIDER
+    amount: 12
+    display: "Tue 12 Araignées des Cavernes"
+    difficulty: MEDIUM
+    reward-money: 90
+    reward-xp: 180
+
+  kill_drowned:
+    type: KILL
+    target: DROWNED
+    amount: 10
+    display: "Tue 10 Noyés"
+    difficulty: EASY
+    reward-money: 65
+    reward-xp: 130
+
+  kill_witches:
+    type: KILL
+    target: WITCH
+    amount: 5
+    display: "Tue 5 Sorcières"
+    difficulty: MEDIUM
+    reward-money: 120
+    reward-xp: 240
+
+  kill_phantoms:
+    type: KILL
+    target: PHANTOM
+    amount: 6
+    display: "Tue 6 Fantômes"
+    difficulty: MEDIUM
+    reward-money: 110
+    reward-xp: 220
+
   kill_endermen:
     type: KILL
     target: ENDERMAN
@@ -38,6 +85,7 @@ quests:
     reward-money: 200
     reward-xp: 400
 
+  # ── KILL — Mobs Nether ───────────────────────────────────
   kill_blazes:
     type: KILL
     target: BLAZE
@@ -47,6 +95,71 @@ quests:
     reward-money: 180
     reward-xp: 350
 
+  kill_piglins:
+    type: KILL
+    target: PIGLIN
+    amount: 10
+    display: "Tue 10 Piglins"
+    difficulty: MEDIUM
+    reward-money: 130
+    reward-xp: 260
+
+  kill_piglin_brutes:
+    type: KILL
+    target: PIGLIN_BRUTE
+    amount: 4
+    display: "Tue 4 Piglins Brutes"
+    difficulty: HARD
+    reward-money: 200
+    reward-xp: 400
+
+  kill_hoglins:
+    type: KILL
+    target: HOGLIN
+    amount: 6
+    display: "Tue 6 Hoglins"
+    difficulty: HARD
+    reward-money: 170
+    reward-xp: 340
+
+  kill_wither_skeletons:
+    type: KILL
+    target: WITHER_SKELETON
+    amount: 5
+    display: "Tue 5 Squelettes du Wither"
+    difficulty: HARD
+    reward-money: 210
+    reward-xp: 420
+
+  kill_ghasts:
+    type: KILL
+    target: GHAST
+    amount: 3
+    display: "Tue 3 Ghasts"
+    difficulty: HARD
+    reward-money: 220
+    reward-xp: 440
+
+  # ── KILL — Raids & Pillards ──────────────────────────────
+  kill_pillagers:
+    type: KILL
+    target: PILLAGER
+    amount: 10
+    display: "Tue 10 Pillards"
+    difficulty: MEDIUM
+    reward-money: 140
+    reward-xp: 280
+
+  kill_vindicators:
+    type: KILL
+    target: VINDICATOR
+    amount: 5
+    display: "Tue 5 Vindicateurs"
+    difficulty: HARD
+    reward-money: 190
+    reward-xp: 380
+
+  # ── GATHER — Minerais ────────────────────────────────────
   gather_diamonds:
     type: GATHER
     target: DIAMOND
@@ -55,6 +168,15 @@ quests:
     difficulty: MEDIUM
     reward-money: 150
     reward-xp: 250
+
+  gather_emeralds:
+    type: GATHER
+    target: EMERALD
+    amount: 3
+    display: "Collecte 3 Émeraudes"
+    difficulty: MEDIUM
+    reward-money: 130
+    reward-xp: 220
 
   gather_iron:
     type: GATHER
@@ -74,6 +196,34 @@ quests:
     reward-money: 80
     reward-xp: 150
 
+  gather_coal:
+    type: GATHER
+    target: COAL
+    amount: 48
+    display: "Collecte 48 Charbons"
+    difficulty: EASY
+    reward-money: 40
+    reward-xp: 80
+
+  gather_obsidian:
+    type: GATHER
+    target: OBSIDIAN
+    amount: 16
+    display: "Mine 16 Obsidiennes"
+    difficulty: MEDIUM
+    reward-money: 100
+    reward-xp: 200
+
+  gather_ancient_debris:
+    type: GATHER
+    target: ANCIENT_DEBRIS
+    amount: 2
+    display: "Trouve 2 Débris Anciens"
+    difficulty: HARD
+    reward-money: 350
+    reward-xp: 700
+
+  # ── GATHER — Nature & Ferme ──────────────────────────────
   gather_wheat:
     type: GATHER
     target: WHEAT
@@ -87,11 +237,48 @@ quests:
     type: GATHER
     target: OAK_LOG
     amount: 64
-    display: "Coupe 64 Bûches"
+    display: "Coupe 64 Bûches de Chêne"
     difficulty: EASY
     reward-money: 50
     reward-xp: 100
 
+  gather_bamboo:
+    type: GATHER
+    target: BAMBOO
+    amount: 64
+    display: "Collecte 64 Bambous"
+    difficulty: EASY
+    reward-money: 45
+    reward-xp: 90
+
+  gather_sugar_cane:
+    type: GATHER
+    target: SUGAR_CANE
+    amount: 48
+    display: "Collecte 48 Cannes à Sucre"
+    difficulty: EASY
+    reward-money: 45
+    reward-xp: 90
+
+  gather_sand:
+    type: GATHER
+    target: SAND
+    amount: 64
+    display: "Collecte 64 Sable"
+    difficulty: EASY
+    reward-money: 35
+    reward-xp: 70
+
+  gather_clay:
+    type: GATHER
+    target: CLAY_BALL
+    amount: 32
+    display: "Collecte 32 Argile"
+    difficulty: EASY
+    reward-money: 50
+    reward-xp: 100
+
+  # ── CRAFT ────────────────────────────────────────────────
   craft_bread:
     type: CRAFT
     target: BREAD
@@ -119,6 +306,34 @@ quests:
     reward-money: 100
     reward-xp: 200
 
+  craft_chest:
+    type: CRAFT
+    target: CHEST
+    amount: 5
+    display: "Fabrique 5 Coffres"
+    difficulty: EASY
+    reward-money: 45
+    reward-xp: 90
+
+  craft_bow:
+    type: CRAFT
+    target: BOW
+    amount: 3
+    display: "Fabrique 3 Arcs"
+    difficulty: MEDIUM
+    reward-money: 75
+    reward-xp: 140
+
+  craft_golden_apple:
+    type: CRAFT
+    target: GOLDEN_APPLE
+    amount: 2
+    display: "Fabrique 2 Pommes d'Or"
+    difficulty: MEDIUM
+    reward-money: 120
+    reward-xp: 240
+
+  # ── TRAVEL ──────────────────────────────────────────────
   travel_1000:
     type: TRAVEL
     target: WALK
@@ -137,6 +352,16 @@ quests:
     reward-money: 120
     reward-xp: 250
 
+  travel_5000:
+    type: TRAVEL
+    target: WALK
+    amount: 5000
+    display: "Parcours 5000 blocs à pied"
+    difficulty: HARD
+    reward-money: 200
+    reward-xp: 400
+
+  # ── BREW ────────────────────────────────────────────────
   brew_potions:
     type: BREW
     target: POTION
@@ -154,3 +379,59 @@ quests:
     difficulty: HARD
     reward-money: 150
     reward-xp: 300
+
+  # ── FISH ────────────────────────────────────────────────
+  fish_cod:
+    type: FISH
+    target: COD
+    amount: 10
+    display: "Pêche 10 Morues"
+    difficulty: EASY
+    reward-money: 55
+    reward-xp: 110
+
+  fish_salmon:
+    type: FISH
+    target: SALMON
+    amount: 8
+    display: "Pêche 8 Saumons"
+    difficulty: EASY
+    reward-money: 65
+    reward-xp: 130
+
+  fish_treasure:
+    type: FISH
+    target: TREASURE
+    amount: 2
+    display: "Trouve 2 Trésors à la Pêche"
+    difficulty: HARD
+    reward-money: 250
+    reward-xp: 500
+
+  # ── SMELT ───────────────────────────────────────────────
+  smelt_iron:
+    type: SMELT
+    target: IRON_INGOT
+    amount: 20
+    display: "Fond 20 Lingots de Fer"
+    difficulty: EASY
+    reward-money: 55
+    reward-xp: 110
+
+  smelt_gold:
+    type: SMELT
+    target: GOLD_INGOT
+    amount: 10
+    display: "Fond 10 Lingots d'Or"
+    difficulty: MEDIUM
+    reward-money: 80
+    reward-xp: 160
+
+  smelt_glass:
+    type: SMELT
+    target: GLASS
+    amount: 32
+    display: "Fond 32 Verres"
+    difficulty: EASY
+    reward-money: 45
+    reward-xp: 90

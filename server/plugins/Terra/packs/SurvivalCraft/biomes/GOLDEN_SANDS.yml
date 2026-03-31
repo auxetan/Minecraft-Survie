@@ -1,0 +1,101 @@
+# ================================================================
+#  Biome : Désert Doré
+#  Remplace une partie des Déserts vanilla.
+#  Caractéristiques : sable teinté de traces d'or, dunes hautes,
+#  ruines de temples enfouis, scorpions (cave_spiders), fossiles.
+#  Ambiance : aride, mystérieux, trésors cachés.
+# ================================================================
+
+id: "GOLDEN_SANDS"
+extends: "DESERT"
+
+# Couleurs atmosphériques — chaud et doré
+color:
+  water: "#c8a800"
+  fog: "#f5d080"
+  sky: "#dda020"
+  grass: "#c0a030"
+  foliage: "#b89020"
+
+# Sons ambiants
+sounds:
+  mood:
+    sound: "block.sand.place"
+    delay: 6000
+    range: 12
+
+# Végétation rare — désert
+flora:
+  density: 0.15
+  items:
+  - id: "DEAD_BUSH"
+    weight: 100
+    threshold: 0.3
+  - id: "CACTUS"
+    weight: 60
+    threshold: 0.5
+  - id: "SANDSTONE"
+    weight: 40
+    threshold: 0.6
+
+# Surface — sable doré avec traces d'or brut
+surface:
+  top: "SAND"
+  filler: "SANDSTONE"
+  ocean: "GRAVEL"
+
+# Génération d'or en surface (rare, donne l'impression "dorée")
+ores:
+  GOLD_ORE:
+    size: 4
+    count: 6
+    minY: -16
+    maxY: 64
+  RAW_GOLD:
+    size: 2
+    count: 2
+    minY: 20
+    maxY: 64
+  SANDSTONE:
+    size: 20
+    count: 15
+    minY: -32
+    maxY: 64
+  SMOOTH_SANDSTONE:
+    size: 8
+    count: 4
+    minY: -16
+    maxY: 40
+
+# Structures spéciales
+structures:
+- id: "DESERT_TEMPLE"
+  chance: 0.08
+- id: "BURIED_GOLDEN_RUIN"
+  chance: 0.12
+- id: "FOSSIL"
+  chance: 0.05
+- id: "DESERT_WELL"
+  chance: 0.04
+
+# Mobs custom (scorpions = cave spiders)
+mobs:
+  spawns:
+  - id: "AraigneeSang"
+    weight: 15
+    minGroup: 1
+    maxGroup: 3
+  - id: "ZombieCorrompu"
+    weight: 5
+    minGroup: 1
+    maxGroup: 2
+  vanilla:
+  - ZOMBIE
+  - SKELETON
+  - HUSK
+  - SPIDER
+
+# Terrain — dunes plus hautes
+terrain:
+  noiseMultiplier: 1.4
+  heightOffset: 8

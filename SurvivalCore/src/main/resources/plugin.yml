@@ -8,67 +8,85 @@ depend: [Vault]
 softdepend: [PlaceholderAPI, BlueMap, MythicMobs, SlimeFun]
 
 commands:
+  # ── Navigation ──────────────────────────────────────────────
+  spawn:
+    description: Retourner au spawn du serveur
+    permission: survival.spawn
+    aliases: [lobby]
   menu:
     description: Ouvre le menu principal
     permission: survival.menu
-  classe:
-    description: Choisir ou voir sa classe
-    permission: survival.class
-  job:
-    description: Choisir ou voir son job
-    permission: survival.job
+  waypoint:
+    description: Gérer ses waypoints (minimap)
+    permission: survival.waypoint
+    usage: /waypoint add <nom>
+  deaths:
+    description: Voir position de ta dernière mort
+    permission: survival.death
+  commandes:
+    description: Liste de toutes les commandes disponibles
+    permission: survival.commandes
+    aliases: [aide, cmds]
+  # ── Économie & Commerce ──────────────────────────────────────
   balance:
-    description: Voir son argent
+    description: Voir son solde
     permission: survival.economy
     aliases: [bal, money]
   pay:
-    description: Payer un joueur
+    description: Payer un autre joueur
     permission: survival.economy
     usage: /pay <joueur> <montant>
   shop:
-    description: Ouvrir le shop admin
+    description: Boutique admin (acheter / vendre ressources)
     permission: survival.shop
+  ah:
+    description: Hôtel des enchères — ventes et enchères joueurs
+    usage: /ah [sell <prix> [durée_h]] | /ah collect
+    permission: survival.auction
+    aliases: [hdv, auction]
   vendre:
-    description: Vendre l'item en main
+    description: Mettre l'item en main sur le marché joueur
     permission: survival.market
     usage: /vendre <prix>
   marche:
-    description: Voir le marché joueur
+    description: Parcourir le marché joueur
     permission: survival.market
-  coffre-commun:
-    description: Ouvrir le coffre commun
-    permission: survival.chest
+  # ── Personnage & Progression ─────────────────────────────────
+  classe:
+    description: Choisir ou voir sa classe RPG
+    permission: survival.class
+  job:
+    description: Choisir ou voir son métier
+    permission: survival.job
   quetes:
-    description: Voir ses quêtes
+    description: Voir ses quêtes journalières
     permission: survival.quests
   classement:
-    description: Voir les leaderboards
+    description: Classements du serveur
     permission: survival.leaderboard
-  deaths:
-    description: Voir position dernière mort
-    permission: survival.death
-  waypoint:
-    description: Gérer ses waypoints
-    permission: survival.waypoint
-    usage: /waypoint add <nom>
+  # ── Serveur ──────────────────────────────────────────────────
   claim:
-    description: Protéger un chunk (système de claim)
+    description: Protéger un chunk
     permission: survival.claim
     usage: /claim [info|list|unclaim|add <joueur>|remove <joueur>]
-  ah:
-    description: Hôtel des enchères
-    usage: /ah [sell <prix> [durée]]
-    permission: survival.auction
+  coffre-commun:
+    description: Coffre communautaire partagé entre joueurs
+    permission: survival.chest
   mods:
-    description: Affiche le lien vers la page de téléchargement des mods
+    description: Affiche le lien de téléchargement des mods recommandés
     permission: survival.mods
+  # ── Admin ────────────────────────────────────────────────────
   admin:
     description: Commandes admin SurvivalCore
     permission: survival.admin
-    usage: /admin <reload|givemoney|setweekly>
+    usage: /admin <reload|givemoney|setweekly|setspawn>
 
 permissions:
+  survival.spawn:
+    default: true
   survival.menu:
+    default: true
+  survival.commandes:
     default: true
   survival.class:
     default: true

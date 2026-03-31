@@ -1,0 +1,95 @@
+# ================================================================
+#  Biome : Vallée Sakura
+#  Remplace 60% des Cherry Groves — version améliorée et plus dense.
+#  Pétales partout, rivières roses, cerfs (pigs), structures de pagode.
+#  Biome le plus beau du serveur — idéal pour construire une base.
+# ================================================================
+
+id: "SAKURA_VALLEY"
+extends: "CHERRY_GROVE"
+
+color:
+  water: "#ff9dc8"
+  fog: "#f5c8e0"
+  sky: "#ffd6e8"
+  grass: "#e8b4c8"
+  foliage: "#d48090"
+
+sounds:
+  additions:
+  - "block.cherry_leaves.break"
+  mood:
+    sound: "entity.bee.loop"
+    delay: 5000
+    range: 8
+
+flora:
+  density: 1.8
+  items:
+  - id: "PINK_PETALS"
+    weight: 200
+    threshold: 0.05
+  - id: "CHERRY_SAPLING"
+    weight: 40
+    threshold: 0.3
+  - id: "AZALEA"
+    weight: 50
+    threshold: 0.3
+  - id: "FLOWERING_AZALEA"
+    weight: 40
+    threshold: 0.4
+  - id: "PINK_TULIP"
+    weight: 60
+    threshold: 0.2
+  - id: "ALLIUM"
+    weight: 40
+    threshold: 0.3
+  - id: "SHORT_GRASS"
+    weight: 100
+    threshold: 0.1
+  - id: "TALL_GRASS"
+    weight: 60
+    threshold: 0.2
+
+surface:
+  top: "GRASS_BLOCK"
+  filler: "DIRT"
+  ocean: "GRAVEL"
+
+trees:
+  density: 0.7
+  types:
+  - id: "CHERRY"
+    weight: 100
+  - id: "OAK"
+    weight: 20
+  - id: "BIRCH"
+    weight: 20
+
+structures:
+- id: "SAKURA_PAGODA"
+  chance: 0.06
+- id: "STONE_LANTERN_PATH"
+  chance: 0.15
+- id: "BAMBOO_GROVE"
+  chance: 0.12
+- id: "KITSUNE_SHRINE"
+  chance: 0.04
+
+mobs:
+  spawns:
+  vanilla:
+  - COW
+  - RABBIT
+  - BEE
+  - FOX
+
+particles:
+  type: "CHERRY_LEAVES"
+  density: 0.008
+  minY: 60
+  maxY: 90
+
+terrain:
+  noiseMultiplier: 0.6
+  heightOffset: -5

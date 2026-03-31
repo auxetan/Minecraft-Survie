@@ -1,0 +1,74 @@
+# ================================================================
+#  Terra Pack — SurvivalCraft v2.0
+#  8 biomes custom + structures, étend la génération OVERWORLD.
+#  Génération activée via bukkit.yml (worlds.world.generator).
+# ================================================================
+
+id: "SurvivalCraft"
+version: "2.0.0"
+author: "SurvivalCraft Team"
+description: "8 biomes custom : Cavernes Cristallines, Forêt Bioluminescente, Désert Doré, Hauts-Plateaux Volcaniques, Wasteland Glacé, Jungle Ancienne, Vallée Sakura, Royaume des Champignons"
+
+# Étend le pack overworld officiel de Terra (inclut tous les biomes vanilla)
+extends: "OVERWORLD"
+
+# Activer la génération des structures vanilla standard
+vanillaStructures: true
+
+# ── Pipeline de biomes ──────────────────────────────────────────
+# Remplace une fraction de certains biomes vanilla par nos biomes custom.
+# L'ordre est important : les remplacements s'appliquent séquentiellement.
+biomeProvider:
+  type: "PIPELINE"
+  resolution: 4
+  initial:
+    type: "SOURCE"
+    id: "OVERWORLD_BIOME_SOURCE"
+  stages:
+  # Souterrain / Deep Dark → Cavernes Cristallines (40%)
+  - type: "REPLACE"
+    from: "minecraft:deep_dark"
+    to: "CRYSTALLINE_CAVES"
+    chance: 0.40
+
+  # Dark Forest → Forêt Bioluminescente (35%)
+  - type: "REPLACE"
+    from: "minecraft:dark_forest"
+    to: "BIOLUMINESCENT_FOREST"
+    chance: 0.35
+
+  # Desert → Désert Doré (30%)
+  - type: "REPLACE"
+    from: "minecraft:desert"
+    to: "GOLDEN_SANDS"
+    chance: 0.30
+
+  # Basalt Deltas → Hauts-Plateaux Volcaniques (50%)
+  - type: "REPLACE"
+    from: "minecraft:basalt_deltas"
+    to: "VOLCANIC_HIGHLANDS"
+    chance: 0.50
+
+  # Frozen Peaks → Wasteland Glacé (40%)
+  - type: "REPLACE"
+    from: "minecraft:frozen_peaks"
+    to: "FROZEN_WASTELAND"
+    chance: 0.40
+
+  # Jungle → Jungle Ancienne (25%)
+  - type: "REPLACE"
+    from: "minecraft:jungle"
+    to: "ANCIENT_JUNGLE"
+    chance: 0.25
+
+  # Cherry Grove → Vallée Sakura (60%)
+  - type: "REPLACE"
+    from: "minecraft:cherry_grove"
+    to: "SAKURA_VALLEY"
+    chance: 0.60
+
+  # Mushroom Fields → Royaume des Champignons (50%)
+  - type: "REPLACE"
+    from: "minecraft:mushroom_fields"
+    to: "MUSHROOM_KINGDOM"
+    chance: 0.50

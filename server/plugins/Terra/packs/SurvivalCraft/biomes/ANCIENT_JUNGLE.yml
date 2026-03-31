@@ -1,0 +1,107 @@
+# ================================================================
+#  Biome : Jungle Ancienne
+#  Replaces 25% des Jungles — végétation dense, ruines envahies,
+#  temples de pierre recouverts de vigne, mobs rares.
+#  Loot : emeraudes, items rares dans les ruines.
+# ================================================================
+
+id: "ANCIENT_JUNGLE"
+extends: "JUNGLE"
+
+color:
+  water: "#004d2e"
+  fog: "#0a2e10"
+  sky: "#1a3d1a"
+  grass: "#2d7a1a"
+  foliage: "#1f6012"
+
+sounds:
+  additions:
+  - "entity.parrot.ambient"
+  mood:
+    sound: "entity.ocelot.ambient"
+    delay: 4000
+    range: 12
+
+flora:
+  density: 2.5
+  items:
+  - id: "VINE"
+    weight: 200
+    threshold: 0.05
+  - id: "FERN"
+    weight: 100
+    threshold: 0.1
+  - id: "LARGE_FERN"
+    weight: 80
+    threshold: 0.2
+  - id: "MOSS_BLOCK"
+    weight: 120
+    threshold: 0.1
+  - id: "MOSS_CARPET"
+    weight: 150
+    threshold: 0.05
+  - id: "MELON"
+    weight: 30
+    threshold: 0.4
+  - id: "COCOA"
+    weight: 20
+    threshold: 0.5
+
+surface:
+  top: "MOSS_BLOCK"
+  filler: "ROOTED_DIRT"
+  ocean: "GRAVEL"
+
+trees:
+  density: 1.2
+  types:
+  - id: "JUNGLE"
+    weight: 70
+  - id: "MEGA_JUNGLE"
+    weight: 30
+  - id: "OAK"
+    weight: 10
+
+ores:
+  EMERALD_ORE:
+    size: 4
+    count: 6
+    minY: -16
+    maxY: 64
+  GOLD_ORE:
+    size: 6
+    count: 8
+    minY: -32
+    maxY: 32
+
+structures:
+- id: "JUNGLE_TEMPLE"
+  chance: 0.04
+- id: "ANCIENT_RUINS"
+  chance: 0.12
+- id: "OVERGROWN_SHRINE"
+  chance: 0.08
+- id: "JUNGLE_WELL"
+  chance: 0.06
+
+mobs:
+  spawns:
+  - id: "AraigneeSang"
+    weight: 15
+    minGroup: 1
+    maxGroup: 3
+  - id: "SorcieresCavernes"
+    weight: 8
+    minGroup: 1
+    maxGroup: 1
+  vanilla:
+  - CREEPER
+  - SPIDER
+  - OCELOT
+  - PARROT
+  - JUNGLE_TEMPLE_MOB
+
+terrain:
+  noiseMultiplier: 0.9
+  heightOffset: 5

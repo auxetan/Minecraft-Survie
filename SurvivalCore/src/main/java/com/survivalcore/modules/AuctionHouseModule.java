@@ -574,7 +574,22 @@ public class AuctionHouseModule implements CoreModule {
                 player.playSound(player.getLocation(),
                         org.bukkit.Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 1.0f);
             }
-        }));
+        })).exceptionally(ex -> {
+            // DB exception (connection closed etc.) — always return the item
+            plugin.getLogger().log(Level.WARNING, "AH: exception lors de la mise en vente, retour item au joueur", ex);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                try {
+                    ItemStack returned = ItemStack.deserializeBytes(Base64.getDecoder().decode(serialized));
+                    var overflow = player.getInventory().addItem(returned);
+                    overflow.values().forEach(i ->
+                            player.getWorld().dropItemNaturally(player.getLocation(), i));
+                } catch (Exception e) {
+                    plugin.getLogger().log(Level.WARNING, "AH: impossible de retourner l'item après exception", e);
+                }
+                player.sendMessage("§c✗ Erreur serveur lors de la mise en vente. Item retourné.");
+            });
+            return null;
+        });
     }
 
     // ─── Logic : process expiries ────────────────────────────────

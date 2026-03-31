@@ -89,9 +89,20 @@ public class DatabaseManager {
                     last_death_z REAL,
                     last_death_world TEXT,
                     last_class_change BIGINT,
-                    last_job_change BIGINT
+                    last_job_change BIGINT,
+                    starter_kit_given INTEGER DEFAULT 0,
+                    quest_streak INTEGER DEFAULT 0,
+                    last_quest_date TEXT
                 );
                 """);
+
+            // Migration : ajouter colonnes manquantes sur les instances existantes
+            try { stmt.execute("ALTER TABLE players ADD COLUMN starter_kit_given INTEGER DEFAULT 0"); }
+            catch (SQLException ignored) {}
+            try { stmt.execute("ALTER TABLE players ADD COLUMN quest_streak INTEGER DEFAULT 0"); }
+            catch (SQLException ignored) {}
+            try { stmt.execute("ALTER TABLE players ADD COLUMN last_quest_date TEXT"); }
+            catch (SQLException ignored) {}
 
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS skills (

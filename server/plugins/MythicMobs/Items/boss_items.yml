@@ -1,0 +1,94 @@
+# ================================================================
+#  SurvivalCraft — Items de boss MythicMobs
+#  Ces items drop uniquement sur les boss / élites.
+# ================================================================
+
+# ── Items d'élites ───────────────────────────────────────────────
+
+EliteEssence:
+  Id: ENDER_EYE
+  Display: '&6Essence Élite'
+  Lore:
+  - '&7Concentrée d''un mob d''élite.'
+  - '&7Se vend cher au Shop ou au /ah.'
+  Enchantments:
+  - LUCK:1
+  Options:
+    Color: ff9900
+
+VOID_SHARD:
+  Id: ECHO_SHARD
+  Display: '&5Fragment du Vide'
+  Lore:
+  - '&7Arraché à un Enderman du Vide.'
+  - '&7Ingrédient de craft des artéfacts.'
+  Enchantments:
+  - LUCK:1
+
+# ── Items de boss ─────────────────────────────────────────────────
+
+BossToken_RoiZombi:
+  Id: GOLD_NUGGET
+  Display: '&4&lCouronne du Roi Zombi'
+  Lore:
+  - '&7La preuve de ta victoire contre'
+  - '&4le Roi Zombi&7.'
+  - ''
+  - '&6Vaut 2000 ✦ au Shop !'
+  Enchantments:
+  - FORTUNE:3
+  Options:
+    GlowingEffect: true
+
+BossToken_ReineAraignee:
+  Id: SPIDER_EYE
+  Display: '&5&lŒil de la Reine Araignée'
+  Lore:
+  - '&7La preuve de ta victoire contre'
+  - '&5la Reine Araignée&7.'
+  - ''
+  - '&6Vaut 1800 ✦ au Shop !'
+  Enchantments:
+  - FORTUNE:3
+  Options:
+    GlowingEffect: true
+
+BossToken_Archonte:
+  Id: NETHER_STAR
+  Display: '&0&l☠ Âme de l''Archonte'
+  Lore:
+  - '&7L''essence condensée de'
+  - "&0l'Archonte du Nether&7."
+  - ''
+  - '&6Vaut 5000 ✦ au Shop !'
+  - '&dPermet de crafter la Balise Maudite.'
+  Enchantments:
+  - FORTUNE:5
+  Options:
+    GlowingEffect: true
+
+WEB_OF_THE_QUEEN:
+  Id: STRING
+  Amount: 32
+  Display: '&5Toile de la Reine'
+  Lore:
+  - '&7Une toile indestructible tissée'
+  - '&7par la Reine Araignée elle-même.'
+  - '&7Ingrédient de craft.'
+  Enchantments:
+  - LUCK:2
+
+ArtifactOfTheArchon:
+  Id: BLAZE_ROD
+  Display: '&c&lBaguette de l''Archonte'
+  Lore:
+  - '&7Un artefact du Nether imprégné'
+  - '&7de la puissance de l''Archonte.'
+  - ''
+  - '&cPermet d''invoquer des Blazes Infernaux'
+  - '&cen cliquant droit (cooldown 5 min).'
+  Enchantments:
+  - FIRE_ASPECT:3
+  - LUCK:2
+  Options:
+    GlowingEffect: true

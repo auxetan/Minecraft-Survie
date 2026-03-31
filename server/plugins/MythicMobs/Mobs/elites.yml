@@ -1,0 +1,315 @@
+# ================================================================
+#  SurvivalCraft — Mobs Élites
+#  10 élites qui remplacent/complètent les spawns vanilla.
+#  Spawn naturellement dans les biomes correspondants.
+#  Chance de spawn configurée dans config.yml (ReplacementChance).
+# ================================================================
+
+# ── 1. Zombie Corrompu ──────────────────────────────────────────
+ZombieCorrompu:
+  Type: ZOMBIE
+  Display: '&4☠ Zombie Corrompu'
+  Health: 80
+  Damage: 6
+  Armor: 4
+  Options:
+    MovementSpeed: 0.28
+    KnockbackResistance: 0.4
+    PreventOtherDrops: true
+    PreventSunburn: true
+    FollowRange: 40
+  BossBar:
+    Enabled: true
+    Title: '&4☠ Zombie Corrompu'
+    Range: 24
+    Color: RED
+    Style: SEGMENTED_6
+  Equipment:
+  - ROTTEN_FLESH:0 HAND
+  Skills:
+  - skill{s=PoisonAura} ~onTimer:40 1
+  - skill{s=GroanOnHit} ~onAttack 1
+  - effect:particles{p=DRIPPING_WATER;amount=8;oy=1} ~onTimer:20 1
+  Drops:
+  - ROTTEN_FLESH 2-5 1
+  - BONE 1-2 0.5
+  - ZOMBIE_HEAD 1 0.03
+  - EliteEssence 1 0.15
+  AIGoalSelectors:
+  - clear
+  - meleeAttack
+  AITargetSelectors:
+  - clear
+  - players
+
+# ── 2. Squelette de l'Ombre ─────────────────────────────────────
+SqueletteOmbre:
+  Type: SKELETON
+  Display: '&8☽ Squelette de l''Ombre'
+  Health: 60
+  Damage: 5
+  Armor: 3
+  Options:
+    MovementSpeed: 0.32
+    PreventOtherDrops: true
+    PreventSunburn: true
+    FollowRange: 48
+  BossBar:
+    Enabled: true
+    Title: '&8☽ Squelette de l''Ombre'
+    Range: 24
+    Color: PURPLE
+    Style: SEGMENTED_6
+  Equipment:
+  - BOW:0 HAND
+  Skills:
+  - skill{s=BlindnessArrow} ~onAttack 0.35
+  - skill{s=SpeedBurst} ~onDamaged 0.5
+  - effect:particles{p=SMOKE_NORMAL;amount=5;oy=1} ~onTimer:25 1
+  Drops:
+  - BONE 2-4 1
+  - ARROW 4-12 1
+  - BOW 1 0.15
+  - EliteEssence 1 0.12
+  AIGoalSelectors:
+  - clear
+  - rangedAttack
+  - randomStroll
+  - lookAtPlayers
+  AITargetSelectors:
+  - clear
+  - players
+
+# ── 3. Creeper Cristallin ────────────────────────────────────────
+CreeperCristallin:
+  Type: CREEPER
+  Display: '&b✦ Creeper Cristallin'
+  Health: 35
+  Damage: 0
+  Options:
+    MovementSpeed: 0.30
+    PreventOtherDrops: true
+    Powered: true
+    FollowRange: 30
+  BossBar:
+    Enabled: true
+    Title: '&b✦ Creeper Cristallin'
+    Range: 20
+    Color: BLUE
+    Style: NOTCHED_6
+  Skills:
+  - skill{s=CrystalSplash} ~onDeath 1
+  - effect:particles{p=CRIT_MAGIC;amount=10;oy=1} ~onTimer:15 1
+  Drops:
+  - GUNPOWDER 2-4 1
+  - AMETHYST_SHARD 2-5 0.8
+  - TINTED_GLASS 1-3 0.5
+  - EliteEssence 1 0.10
+  AIGoalSelectors:
+  - clear
+  - meleeAttack
+  AITargetSelectors:
+  - clear
+  - players
+
+# ── 4. Enderman du Vide ──────────────────────────────────────────
+EndermanVide:
+  Type: ENDERMAN
+  Display: '&5⟁ Enderman du Vide'
+  Health: 120
+  Damage: 9
+  Armor: 5
+  Options:
+    MovementSpeed: 0.35
+    KnockbackResistance: 0.6
+    PreventOtherDrops: true
+    FollowRange: 64
+  BossBar:
+    Enabled: true
+    Title: '&5⟁ Enderman du Vide'
+    Range: 30
+    Color: PURPLE
+    Style: SEGMENTED_10
+  Skills:
+  - skill{s=VoidTeleport} ~onDamaged 0.6
+  - skill{s=LevitateTarget} ~onTimer:100 1
+  - effect:particles{p=PORTAL;amount=15;oy=1} ~onTimer:20 1
+  Drops:
+  - ENDER_PEARL 2-4 1
+  - CHORUS_FRUIT 1-3 0.6
+  - VOID_SHARD 1 0.2
+  - EliteEssence 1 0.20
+  AIGoalSelectors:
+  - clear
+  - meleeAttack
+  AITargetSelectors:
+  - clear
+  - players
+
+# ── 5. Blaze Infernal ────────────────────────────────────────────
+BlazeInfernal:
+  Type: BLAZE
+  Display: '&c🔥 Blaze Infernal'
+  Health: 80
+  Damage: 8
+  Armor: 4
+  Options:
+    MovementSpeed: 0.30
+    PreventOtherDrops: true
+    FollowRange: 48
+  BossBar:
+    Enabled: true
+    Title: '&c🔥 Blaze Infernal'
+    Range: 30
+    Color: RED
+    Style: SEGMENTED_6
+  Skills:
+  - skill{s=FireStorm} ~onTimer:120 1
+  - skill{s=FireAura} ~onTimer:30 1
+  - effect:particles{p=FLAME;amount=12;oy=1} ~onTimer:10 1
+  Drops:
+  - BLAZE_ROD 2-4 1
+  - BLAZE_POWDER 3-6 1
+  - MAGMA_CREAM 1-2 0.5
+  - EliteEssence 1 0.18
+
+# ── 6. Noyé Ancien ──────────────────────────────────────────────
+NoyeAncient:
+  Type: DROWNED
+  Display: '&3⚓ Noyé Ancien'
+  Health: 70
+  Damage: 7
+  Armor: 5
+  Options:
+    MovementSpeed: 0.28
+    KnockbackResistance: 0.5
+    PreventOtherDrops: true
+    FollowRange: 40
+  BossBar:
+    Enabled: true
+    Title: '&3⚓ Noyé Ancien'
+    Range: 24
+    Color: BLUE
+    Style: SEGMENTED_6
+  Equipment:
+  - TRIDENT:0 HAND
+  Skills:
+  - skill{s=TridentVolley} ~onTimer:80 1
+  - skill{s=WaterCurse} ~onTimer:60 1
+  - effect:particles{p=WATER_BUBBLE;amount=10;oy=1} ~onTimer:20 1
+  Drops:
+  - ROTTEN_FLESH 2-4 1
+  - TRIDENT 1 0.06
+  - NAUTILUS_SHELL 1 0.10
+  - EliteEssence 1 0.15
+
+# ── 7. Araignée de Sang ─────────────────────────────────────────
+AraigneeSang:
+  Type: SPIDER
+  Display: '&4🕷 Araignée de Sang'
+  Health: 65
+  Damage: 6
+  Armor: 3
+  Options:
+    MovementSpeed: 0.38
+    PreventOtherDrops: true
+    FollowRange: 40
+  BossBar:
+    Enabled: true
+    Title: '&4🕷 Araignée de Sang'
+    Range: 24
+    Color: RED
+    Style: SEGMENTED_6
+  Skills:
+  - skill{s=WebTrap} ~onTimer:80 1
+  - skill{s=BloodPoison} ~onAttack 0.4
+  - effect:particles{p=CRIT;amount=6;oy=0.5} ~onTimer:20 1
+  Drops:
+  - STRING 3-6 1
+  - SPIDER_EYE 2-4 1
+  - COBWEB 1-2 0.4
+  - EliteEssence 1 0.12
+
+# ── 8. Ghast Corrompu ────────────────────────────────────────────
+GhastCorrompu:
+  Type: GHAST
+  Display: '&f💀 Ghast Corrompu'
+  Health: 100
+  Damage: 10
+  Armor: 5
+  Options:
+    MovementSpeed: 0.40
+    KnockbackResistance: 0.8
+    PreventOtherDrops: true
+    FollowRange: 100
+  BossBar:
+    Enabled: true
+    Title: '&f💀 Ghast Corrompu'
+    Range: 60
+    Color: WHITE
+    Style: SEGMENTED_6
+  Skills:
+  - skill{s=EmpoweredFireball} ~onTimer:60 1
+  - effect:particles{p=CLOUD;amount=15;oy=2} ~onTimer:15 1
+  Drops:
+  - GHAST_TEAR 1-2 0.8
+  - GUNPOWDER 4-8 1
+  - EliteEssence 1 0.20
+
+# ── 9. Pillard Maudit ────────────────────────────────────────────
+PillardMaudit:
+  Type: PILLAGER
+  Display: '&6⚔ Pillard Maudit'
+  Health: 65
+  Damage: 7
+  Armor: 4
+  Options:
+    MovementSpeed: 0.34
+    PreventOtherDrops: true
+    FollowRange: 60
+  BossBar:
+    Enabled: true
+    Title: '&6⚔ Pillard Maudit'
+    Range: 30
+    Color: YELLOW
+    Style: SEGMENTED_6
+  Equipment:
+  - CROSSBOW:0 HAND
+  Skills:
+  - skill{s=ArrowBarrage} ~onTimer:100 1
+  - skill{s=RallyNearby} ~onHealth{h<50%} 1
+  - effect:particles{p=SPELL_MOB;amount=8;oy=1} ~onTimer:25 1
+  Drops:
+  - CROSSBOW 1 0.15
+  - ARROW 6-14 1
+  - PILLAGER_HEAD 1 0.04
+  - EliteEssence 1 0.15
+
+# ── 10. Sorcière des Cavernes ────────────────────────────────────
+SorcieresCavernes:
+  Type: WITCH
+  Display: '&d☠ Sorcière des Cavernes'
+  Health: 55
+  Damage: 5
+  Armor: 3
+  Options:
+    MovementSpeed: 0.30
+    PreventOtherDrops: true
+    FollowRange: 48
+  BossBar:
+    Enabled: true
+    Title: '&d☠ Sorcière des Cavernes'
+    Range: 24
+    Color: PINK
+    Style: SEGMENTED_6
+  Skills:
+  - skill{s=DebuffChain} ~onTimer:80 1
+  - skill{s=PotionBarrage} ~onTimer:120 1
+  - effect:particles{p=SPELL_WITCH;amount=10;oy=1} ~onTimer:20 1
+  Drops:
+  - SPIDER_EYE 2-4 0.9
+  - GLASS_BOTTLE 3-6 1
+  - REDSTONE 2-5 0.8
+  - SUGAR 2-4 0.8
+  - GUNPOWDER 1-3 0.6
+  - EliteEssence 1 0.15

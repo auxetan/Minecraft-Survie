@@ -313,6 +313,91 @@ else
     ok "  EssentialsX deja present."
 fi
 
+# --- PlaceholderAPI ---
+if [ ! -f "$PLUGIN_DIR/PlaceholderAPI.jar" ]; then
+    info "  Telechargement de PlaceholderAPI..."
+    PAPI_URL=$(curl -fsSL "https://api.modrinth.com/v2/project/placeholderapi/version" \
+        | python3 -c "
+import sys, json
+versions = json.load(sys.stdin)
+for v in versions:
+    for f in v.get('files', []):
+        if 'placeholderapi' in f['filename'].lower():
+            print(f['url'])
+            sys.exit(0)
+print('')
+" 2>/dev/null)
+    if [ -n "$PAPI_URL" ]; then
+        curl -fsSL -L -o "$PLUGIN_DIR/PlaceholderAPI.jar" "$PAPI_URL"
+        ok "  PlaceholderAPI.jar"
+    else
+        warn "  PlaceholderAPI: telecharge depuis https://hangar.papermc.io/HelpChat/PlaceholderAPI"
+    fi
+else
+    ok "  PlaceholderAPI deja present."
+fi
+
+# --- Simple Voice Chat ---
+if [ ! -f "$PLUGIN_DIR/VoiceChat.jar" ] && ! ls "$PLUGIN_DIR"/voicechat*.jar &>/dev/null 2>&1; then
+    info "  Telechargement de Simple Voice Chat..."
+    VOICECHAT_URL=$(curl -fsSL "https://api.modrinth.com/v2/project/simple-voice-chat/version?loaders=[\"paper\"]" \
+        | python3 -c "
+import sys, json
+versions = json.load(sys.stdin)
+for v in versions:
+    for f in v.get('files', []):
+        if 'bukkit' in f['filename'].lower() or 'paper' in f['filename'].lower() or 'voicechat-bukkit' in f['filename'].lower():
+            print(f['url'])
+            sys.exit(0)
+# fallback: first file
+if versions and versions[0].get('files'):
+    print(versions[0]['files'][0]['url'])
+" 2>/dev/null)
+    if [ -n "$VOICECHAT_URL" ]; then
+        curl -fsSL -L -o "$PLUGIN_DIR/VoiceChat.jar" "$VOICECHAT_URL"
+        ok "  Simple Voice Chat.jar"
+    else
+        warn "  Simple Voice Chat: telecharge depuis https://modrinth.com/plugin/simple-voice-chat"
+    fi
+else
+    ok "  Simple Voice Chat deja present."
+fi
+
+# --- MythicMobs (premium — avertissement) ---
+if ! ls "$PLUGIN_DIR"/MythicMobs*.jar &>/dev/null 2>&1; then
+    warn "  MythicMobs : plugin PREMIUM. Telecharge manuellement sur"
+    warn "    https://mythiccraft.io/index.php?pages/official-mythicmobs-download/"
+    warn "    Puis place le jar dans $PLUGIN_DIR/"
+else
+    ok "  MythicMobs deja present."
+fi
+
+# --- Terra (biomes custom) ---
+if ! ls "$PLUGIN_DIR"/Terra*.jar &>/dev/null 2>&1; then
+    info "  Telechargement de Terra..."
+    TERRA_URL=$(curl -fsSL "https://api.modrinth.com/v2/project/terra/version?loaders=[\"paper\"]" \
+        | python3 -c "
+import sys, json
+versions = json.load(sys.stdin)
+for v in versions:
+    for f in v.get('files', []):
+        fname = f['filename'].lower()
+        if 'bukkit' in fname or 'paper' in fname:
+            print(f['url'])
+            sys.exit(0)
+if versions and versions[0].get('files'):
+    print(versions[0]['files'][0]['url'])
+" 2>/dev/null)
+    if [ -n "$TERRA_URL" ]; then
+        curl -fsSL -L -o "$PLUGIN_DIR/Terra.jar" "$TERRA_URL"
+        ok "  Terra.jar"
+    else
+        warn "  Terra: telecharge depuis https://modrinth.com/plugin/terra"
+    fi
+else
+    ok "  Terra deja present."
+fi
+
 # ════════════════════════════════════════════════════════════════
 #  ETAPE 7 — PLAYIT.GG (tunnel pour acces internet)
 # ════════════════════════════════════════════════════════════════
