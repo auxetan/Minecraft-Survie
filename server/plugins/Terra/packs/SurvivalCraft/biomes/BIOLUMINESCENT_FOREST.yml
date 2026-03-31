@@ -1,0 +1,104 @@
+# ================================================================
+#  Biome : Forêt Bioluminescente
+#  Remplace une partie des Dark Forests.
+#  Caractéristiques : champignons lumineux, glow berries, mousses
+#  phosphorescentes, lucioles (particules), brouillard bleu-vert.
+#  Ambiance : mystérieuse, belle la nuit, dangereuse (araignées).
+# ================================================================
+
+id: "BIOLUMINESCENT_FOREST"
+extends: "DARK_FOREST"
+
+# Couleurs atmosphériques
+color:
+  water: "#1affb2"
+  fog: "#0a2e1a"
+  sky: "#0d1f1a"
+  grass: "#1a5c3a"
+  foliage: "#0f4d2e"
+
+# Sons ambiants — forêt mystérieuse
+sounds:
+  additions:
+  - "block.sculk_sensor.clicking"
+  - "block.amethyst_block.chime"
+  mood:
+    sound: "entity.bat.ambient"
+    delay: 6000
+    range: 8
+
+# Végétation bioluminescente
+flora:
+  density: 1.2
+  items:
+  - id: "GLOW_LICHEN"
+    weight: 120
+    threshold: 0.05
+  - id: "GLOW_BERRIES"
+    weight: 80
+    threshold: 0.2
+  - id: "MOSS_BLOCK"
+    weight: 100
+    threshold: 0.1
+  - id: "SCULK"
+    weight: 30
+    threshold: 0.4
+  - id: "SHROOMLIGHT"
+    weight: 20
+    threshold: 0.6
+  - id: "CRIMSON_FUNGUS"
+    weight: 15
+    threshold: 0.7
+  - id: "WARPED_FUNGUS"
+    weight: 15
+    threshold: 0.7
+
+# Surface
+surface:
+  top: "MOSS_BLOCK"
+  filler: "ROOTED_DIRT"
+  ocean: "GRAVEL"
+
+# Arbres — grands chênes + champignons géants
+trees:
+  density: 0.8
+  types:
+  - id: "OAK"
+    weight: 40
+  - id: "DARK_OAK"
+    weight: 60
+  - id: "HUGE_RED_MUSHROOM"
+    weight: 20
+  - id: "HUGE_BROWN_MUSHROOM"
+    weight: 20
+
+# Structures
+structures:
+- id: "GLOWING_MUSHROOM_CIRCLE"
+  chance: 0.15
+- id: "BIOLUMINESCENT_CAVE_ENTRANCE"
+  chance: 0.05
+
+# Mobs custom
+mobs:
+  spawns:
+  - id: "AraigneeSang"
+    weight: 12
+    minGroup: 1
+    maxGroup: 3
+  - id: "SorcieresCavernes"
+    weight: 8
+    minGroup: 1
+    maxGroup: 1
+  vanilla:
+  - SPIDER
+  - CAVE_SPIDER
+  - WITCH
+  - BAT
+
+# Particules (effet lucioles simulé)
+particles:
+  type: "END_ROD"
+  density: 0.002
+  minY: 60
+  maxY: 80

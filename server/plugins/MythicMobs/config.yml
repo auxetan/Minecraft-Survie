@@ -1,0 +1,44 @@
+# ================================================================
+#  MythicMobs — Configuration SurvivalCraft
+# ================================================================
+
+Options:
+  # Activer le système de spawn naturel (remplacement des spawns vanilla)
+  UseVanillaSpawns: true
+  # Les mobs MythicMobs ne drop pas les objets vanilla par défaut
+  # (défini dans chaque mob avec PreventOtherDrops)
+
+Spawning:
+  # Désactiver le spawn vanilla pour les entités remplacées par les élites
+  PreventOtherDropsOnReplacement: false
+  # Rayon autour du spawn où les élites ne spawnent pas (zones de sécurité)
+  SafeZoneRadius: 100
+
+# Remplacements des spawns vanilla par les élites (5% de chance)
+MobReplacements:
+  ZOMBIE:
+  - ZombieCorrompu 0.05
+  SKELETON:
+  - SqueletteOmbre 0.05
+  CREEPER:
+  - CreeperCristallin 0.04
+  ENDERMAN:
+  - EndermanVide 0.06
+  BLAZE:
+  - BlazeInfernal 0.08
+  DROWNED:
+  - NoyeAncient 0.06
+  SPIDER:
+  - AraigneeSang 0.05
+  GHAST:
+  - GhastCorrompu 0.07
+  PILLAGER:
+  - PillardMaudit 0.06
+  WITCH:
+  - SorcieresCavernes 0.06
+
+# Cooldown des boss (en secondes) après mort — empêche le farm
+BossCooldowns:
+  RoiZombi: 3600
+  ReineAraignee: 3600
+  ArchonteNether: 7200

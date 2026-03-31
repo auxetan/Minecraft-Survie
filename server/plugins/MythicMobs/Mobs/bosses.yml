@@ -1,0 +1,164 @@
+# ================================================================
+#  SurvivalCraft — Boss Mobs (3 boss world)
+#  Les boss se spawn via /mm mobs spawn <BossName> ou via spawners
+#  placés en survie. Chaque boss a ses phases et ses mécaniques.
+#  Commande : /mm mobs spawn RoiZombi
+# ================================================================
+
+# ── BOSS 1 : Le Roi Zombi ────────────────────────────────────────
+# Boss de la surface — cavernes profondes, vieux villages maudits
+# Mécanique : phase 2 à 50% HP (régénération + armure), phase 3 à 20% HP (berserk)
+RoiZombi:
+  Type: ZOMBIE
+  Display: '&4&l⚔ Le Roi Zombi ⚔'
+  Health: 600
+  Damage: 14
+  Armor: 12
+  Options:
+    MovementSpeed: 0.26
+    KnockbackResistance: 1.0
+    PreventOtherDrops: true
+    PreventSunburn: true
+    PreventMobKillDrops: false
+    FollowRange: 80
+    Size: 3
+  BossBar:
+    Enabled: true
+    Title: '&4&l⚔ Le Roi Zombi &4&l⚔'
+    Range: 60
+    Color: RED
+    Style: SEGMENTED_20
+  Equipment:
+  - GOLDEN_SWORD:0 HAND
+  - GOLDEN_HELMET:0 HEAD
+  - GOLDEN_CHESTPLATE:0 CHEST
+  - GOLDEN_LEGGINGS:0 LEGS
+  - GOLDEN_BOOTS:0 FEET
+  Skills:
+  # Phase 1 (> 50% HP)
+  - skill{s=RoiZombi_GroundSlam} ~onTimer:100 ?hp>50%
+  - skill{s=RoiZombi_ZombieHorde} ~onTimer:200 ?hp>50%
+  # Phase 2 (50% → 20% HP)
+  - skill{s=RoiZombi_PhaseTwo} ~onHealth{h=50%} 1
+  - skill{s=RoiZombi_BoneWall} ~onTimer:80 ?hp<=50%&hp>20%
+  # Phase 3 Berserk (< 20% HP)
+  - skill{s=RoiZombi_Berserk} ~onHealth{h=20%} 1
+  - skill{s=RoiZombi_DeathRattle} ~onDeath 1
+  # Ambiance permanente
+  - effect:particles{p=DRIP_LAVA;amount=15;oy=2;radius=2} ~onTimer:15 1
+  - sound{s=ENTITY_ZOMBIE_AMBIENT;v=2;p=0.7} ~onTimer:60 1
+  Drops:
+  - ROTTEN_FLESH 10-20 1
+  - GOLDEN_SWORD 1 0.8
+  - DIAMOND 3-6 0.6
+  - ZOMBIE_HEAD 2 0.5
+  - BossToken_RoiZombi 1 1
+  AIGoalSelectors:
+  - clear
+  - meleeAttack
+  - randomStroll
+  AITargetSelectors:
+  - clear
+  - players
+
+# ── BOSS 2 : La Reine Araignée ───────────────────────────────────
+# Boss des cavernes — grottes d'araignées
+# Mécanique : convoque des petites araignées, crée des zones de toile
+ReineAraignee:
+  Type: SPIDER
+  Display: '&5&l🕷 La Reine Araignée 🕷'
+  Health: 500
+  Damage: 12
+  Armor: 8
+  Options:
+    MovementSpeed: 0.36
+    KnockbackResistance: 0.8
+    PreventOtherDrops: true
+    FollowRange: 60
+    Size: 4
+  BossBar:
+    Enabled: true
+    Title: '&5&l🕷 La Reine Araignée &5&l🕷'
+    Range: 50
+    Color: PURPLE
+    Style: SEGMENTED_20
+  Skills:
+  - skill{s=ReineAraignee_WebZone} ~onTimer:120 1
+  - skill{s=ReineAraignee_SpawnBrood} ~onTimer:160 1
+  - skill{s=ReineAraignee_VenomSpit} ~onTimer:60 1
+  - skill{s=ReineAraignee_SpawnPhaseDeux} ~onHealth{h=40%} 1
+  - skill{s=ReineAraignee_EggSack} ~onDeath 1
+  - effect:particles{p=CRIT;amount=12;oy=1;radius=2} ~onTimer:20 1
+  - sound{s=ENTITY_SPIDER_AMBIENT;v=2;p=0.5} ~onTimer:40 1
+  Drops:
+  - STRING 20-40 1
+  - SPIDER_EYE 10-20 1
+  - COBWEB 5-10 0.9
+  - WEB_OF_THE_QUEEN 1 1
+  - DIAMOND 2-5 0.7
+  - BossToken_ReineAraignee 1 1
+  AIGoalSelectors:
+  - clear
+  - meleeAttack
+  - randomStroll
+  AITargetSelectors:
+  - clear
+  - players
+
+# ── BOSS 3 : L'Archonte du Nether ───────────────────────────────
+# Boss ultime du Nether — forteresse du Nether
+# Mécanique : 3 phases, invulnérable entre, convoque des blazes, wither effect
+ArchonteNether:
+  Type: WITHER_SKELETON
+  Display: '&0&l💀 L''Archonte du Nether 💀'
+  Health: 900
+  Damage: 18
+  Armor: 16
+  Options:
+    MovementSpeed: 0.30
+    KnockbackResistance: 1.0
+    PreventOtherDrops: true
+    FollowRange: 80
+    Size: 2
+  BossBar:
+    Enabled: true
+    Title: '&0&l💀 L''Archonte du Nether 💀'
+    Range: 80
+    Color: PURPLE
+    Style: SEGMENTED_20
+  Equipment:
+  - NETHERITE_SWORD:0 HAND
+  - NETHERITE_HELMET:0 HEAD
+  - NETHERITE_CHESTPLATE:0 CHEST
+  - NETHERITE_LEGGINGS:0 LEGS
+  - NETHERITE_BOOTS:0 FEET
+  Skills:
+  # Phase 1 (> 60% HP)
+  - skill{s=Archonte_WitherBolt} ~onTimer:80 ?hp>60%
+  - skill{s=Archonte_SummonBlaze} ~onTimer:200 ?hp>60%
+  # Phase 2 (60% → 30% HP)
+  - skill{s=Archonte_PhaseTransition} ~onHealth{h=60%} 1
+  - skill{s=Archonte_NetherStorm} ~onTimer:100 ?hp<=60%&hp>30%
+  - skill{s=Archonte_WitherAura} ~onTimer:40 ?hp<=60%
+  # Phase 3 Finale (< 30% HP)
+  - skill{s=Archonte_PhaseFinale} ~onHealth{h=30%} 1
+  - skill{s=Archonte_SoulRip} ~onTimer:60 ?hp<=30%
+  - skill{s=Archonte_Explosion} ~onDeath 1
+  # Ambiance
+  - effect:particles{p=SOUL;amount=20;oy=2;radius=3} ~onTimer:10 1
+  - effect:particles{p=DRIP_LAVA;amount=8;oy=2;radius=2} ~onTimer:20 1
+  - sound{s=ENTITY_WITHER_AMBIENT;v=3;p=0.6} ~onTimer:80 1
+  Drops:
+  - WITHER_SKELETON_SKULL 2-3 0.8
+  - NETHERITE_SCRAP 3-6 0.6
+  - NETHER_STAR 1 0.25
+  - ANCIENT_DEBRIS 2-4 0.5
+  - ArtifactOfTheArchon 1 1
+  - BossToken_Archonte 1 1
+  AIGoalSelectors:
+  - clear
+  - meleeAttack
+  - randomStroll
+  AITargetSelectors:
+  - clear
+  - players

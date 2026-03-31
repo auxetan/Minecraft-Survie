@@ -1,0 +1,273 @@
+# ================================================================
+#  SurvivalCraft — MythicMobs Skills
+#  Skills partagés entre élites et boss.
+# ================================================================
+
+# ── Élite Skills ─────────────────────────────────────────────────
+
+PoisonAura:
+  Skills:
+  - potion{t=POISON;d=80;l=0;radius=3} @PlayersInRadius{r=3}
+
+GroanOnHit:
+  Skills:
+  - sound{s=ENTITY_ZOMBIE_HURT;v=1.5;p=0.8}
+
+BlindnessArrow:
+  Skills:
+  - potion{t=BLINDNESS;d=60;l=0} @Target
+
+SpeedBurst:
+  Skills:
+  - potion{t=SPEED;d=40;l=2} @Self
+
+CrystalSplash:
+  Skills:
+  - projectile{onTick=CrystalSplash_Tick;v=1;i=1;hn=5;ml=20} =4 @players{r=8}
+
+CrystalSplash_Tick:
+  Skills:
+  - effect:particles{p=CRIT_MAGIC;amount=3}
+
+VoidTeleport:
+  Cooldown: 3
+  Skills:
+  - teleport{flocation=@Target}
+  - potion{t=DAMAGE_RESISTANCE;d=20;l=1} @Self
+  - effect:particles{p=PORTAL;amount=30;oy=0} @Self
+
+LevitateTarget:
+  Cooldown: 5
+  Skills:
+  - potion{t=LEVITATION;d=60;l=0} @Target
+  - message{m='&5L''Enderman du Vide te soulève dans les airs !'} @Target
+
+FireStorm:
+  Cooldown: 6
+  Skills:
+  - fireball{v=1.5;hn=1;ml=20;size=1.2} =6 @PlayersInRadius{r=15}
+
+FireAura:
+  Skills:
+  - damage{a=3;ignoreArmor=false;preventknockback=true} @PlayersInRadius{r=3}
+  - ignite{t=40} @PlayersInRadius{r=3}
+
+TridentVolley:
+  Cooldown: 5
+  Skills:
+  - projectile{onTick=Trident_Tick;v=2;hn=1;ml=30} =3 @Target
+
+Trident_Tick:
+  Skills:
+  - effect:particles{p=WATER_SPLASH;amount=5}
+
+WaterCurse:
+  Cooldown: 8
+  Skills:
+  - potion{t=SLOWNESS;d=100;l=1} @Target
+  - potion{t=HUNGER;d=80;l=0} @Target
+  - message{m='&3Le Noyé Ancien te maudit !'} @Target
+
+WebTrap:
+  Cooldown: 8
+  Skills:
+  - potion{t=SLOWNESS;d=80;l=3} @Target
+  - blocksphere{material=COBWEB;size=1} @Target
+  - message{m='&4L''Araignée de Sang te piège !'} @Target
+
+BloodPoison:
+  Skills:
+  - potion{t=POISON;d=100;l=0} @Target
+
+EmpoweredFireball:
+  Cooldown: 4
+  Skills:
+  - fireball{v=2;hn=1;ml=40;size=2;yield=2} @Target
+
+ArrowBarrage:
+  Cooldown: 5
+  Skills:
+  - projectile{onTick=Arrow_Tick;v=2.5;hn=1;ml=30} =5 @Target
+
+Arrow_Tick:
+  Skills:
+  - effect:particles{p=CRIT;amount=2}
+
+RallyNearby:
+  Skills:
+  - potion{t=STRENGTH;d=120;l=0;radius=10} @MobsInRadius{r=10}
+  - sound{s=ENTITY_PILLAGER_CELEBRATE;v=2;p=1.0}
+
+DebuffChain:
+  Cooldown: 8
+  Skills:
+  - potion{t=WEAKNESS;d=100;l=1} @Target
+  - potion{t=SLOWNESS;d=80;l=0} @Target
+  - potion{t=NAUSEA;d=60;l=0} @Target
+
+PotionBarrage:
+  Cooldown: 10
+  Skills:
+  - projectile{onHit=Potion_Splash;v=1;hn=1;ml=20} =3 @Target
+
+Potion_Splash:
+  Skills:
+  - potion{t=POISON;d=100;l=0;radius=4} @Origin
+  - effect:particles{p=SPELL_WITCH;amount=20;oy=0;radius=2} @Origin
+
+# ── Boss Skills — Roi Zombi ──────────────────────────────────────
+
+RoiZombi_GroundSlam:
+  Cooldown: 5
+  Skills:
+  - damage{a=20;ignoreArmor=false} @PlayersInRadius{r=6}
+  - velocity{v=0.5;y=0.5} @PlayersInRadius{r=6}
+  - blocksphere{material=GRAVEL;size=2;durationticks=40} @Self
+  - sound{s=ENTITY_ZOMBIE_ATTACK_IRON_DOOR;v=3;p=0.5}
+  - effect:particles{p=EXPLOSION_LARGE;amount=5;oy=0;radius=3} @Self
+
+RoiZombi_ZombieHorde:
+  Cooldown: 12
+  Skills:
+  - mob{m=ZOMBIE;amount=4;radius=5} @Self
+  - message{m='&4&lLe Roi Zombi appelle sa horde !'} @PlayersInRadius{r=40}
+
+RoiZombi_PhaseTwo:
+  Skills:
+  - message{m='&4&l⚔ Le Roi Zombi entre en Rage ! ⚔'} @PlayersInRadius{r=40}
+  - sound{s=ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR;v=4;p=0.6}
+  - potion{t=REGENERATION;d=100;l=1} @Self
+  - potion{t=RESISTANCE;d=100;l=0} @Self
+  - setdisplaymeta{n='&4&l⚔ Le Roi Zombi &c[ENRAGÉ] ⚔'}
+  - effect:particles{p=LAVA;amount=30;oy=2;radius=3} @Self
+
+RoiZombi_BoneWall:
+  Cooldown: 8
+  Skills:
+  - spread{s=RoiZombi_ThrowBone;n=6;sp=15;cd=1}
+
+RoiZombi_ThrowBone:
+  Skills:
+  - projectile{onHit=Bone_Hit;v=3;hn=1;ml=30}
+
+Bone_Hit:
+  Skills:
+  - damage{a=12;ignoreArmor=false}
+  - potion{t=SLOWNESS;d=60;l=1} @Target
+
+RoiZombi_Berserk:
+  Skills:
+  - message{m='&4&l☠ LE ROI ZOMBI ENTRE EN FURIE ! ☠'} @PlayersInRadius{r=60}
+  - sound{s=ENTITY_ZOMBIE_HURT;v=5;p=0.4}
+  - potion{t=SPEED;d=999;l=1} @Self
+  - potion{t=STRENGTH;d=999;l=2} @Self
+  - setdisplaymeta{n='&c&l☠ Le Roi Zombi [FURIE] ☠'}
+
+RoiZombi_DeathRattle:
+  Skills:
+  - effect:particles{p=EXPLOSION_HUGE;amount=10;oy=1;radius=5} @Self
+  - sound{s=ENTITY_ZOMBIE_ATTACK_HEAVY_ARMOR;v=5;p=0.3}
+  - message{m='&4&l... Le Roi Zombi tombe. Tu es digne.'} @PlayersInRadius{r=60}
+  - mob{m=ZOMBIE;amount=8;radius=8} @Self
+
+# ── Boss Skills — Reine Araignée ─────────────────────────────────
+
+ReineAraignee_WebZone:
+  Cooldown: 8
+  Skills:
+  - blocksphere{material=COBWEB;size=2;durationticks=200} @Target
+  - potion{t=SLOWNESS;d=60;l=3} @PlayersInRadius{r=6}
+  - message{m='&5La Reine Araignée tisse sa toile !'} @PlayersInRadius{r=30}
+
+ReineAraignee_SpawnBrood:
+  Cooldown: 10
+  Skills:
+  - mob{m=CAVE_SPIDER;amount=6;radius=4} @Self
+  - sound{s=ENTITY_SPIDER_AMBIENT;v=3;p=0.4}
+  - message{m='&5&lLa Reine Araignée appelle ses enfants !'} @PlayersInRadius{r=40}
+
+ReineAraignee_VenomSpit:
+  Cooldown: 4
+  Skills:
+  - projectile{onHit=Venom_Hit;v=2;hn=1;ml=25}
+
+Venom_Hit:
+  Skills:
+  - potion{t=POISON;d=160;l=1} @Target
+  - potion{t=SLOWNESS;d=80;l=0} @Target
+  - effect:particles{p=SPELL_WITCH;amount=15;oy=0} @Origin
+
+ReineAraignee_SpawnPhaseDeux:
+  Skills:
+  - message{m='&5&l🕷 LA REINE ARAIGNÉE ÉCLOT SES OEUFS ! 🕷'} @PlayersInRadius{r=50}
+  - mob{m=SPIDER;amount=10;radius=6} @Self
+  - potion{t=STRENGTH;d=200;l=1} @Self
+  - setdisplaymeta{n='&5&l🕷 La Reine Araignée [FURIEUSE] 🕷'}
+
+ReineAraignee_EggSack:
+  Skills:
+  - mob{m=SPIDER;amount=12;radius=5} @Self
+  - effect:particles{p=EXPLOSION_LARGE;amount=8;radius=4} @Self
+  - message{m='&5&l... La Reine est morte. Ses œufs éclosent...'} @PlayersInRadius{r=60}
+
+# ── Boss Skills — Archonte du Nether ─────────────────────────────
+
+Archonte_WitherBolt:
+  Cooldown: 4
+  Skills:
+  - projectile{onHit=WitherBolt_Hit;v=3.5;hn=1;ml=50;size=1}
+
+WitherBolt_Hit:
+  Skills:
+  - damage{a=25;ignoreArmor=false}
+  - potion{t=WITHER;d=100;l=0} @Target
+  - effect:particles{p=SOUL;amount=20;oy=0} @Origin
+
+Archonte_SummonBlaze:
+  Cooldown: 15
+  Skills:
+  - mob{m=BLAZE;amount=4;radius=6} @Self
+  - sound{s=ENTITY_BLAZE_AMBIENT;v=4;p=0.5}
+  - message{m='&0&l💀 L''Archonte du Nether invoque ses serviteurs !'} @PlayersInRadius{r=60}
+
+Archonte_PhaseTransition:
+  Skills:
+  - message{m='&0&l💀 L''ARCHONTE DU NETHER SE TRANSFORME ! 💀'} @PlayersInRadius{r=80}
+  - effect:explosion @Self
+  - potion{t=DAMAGE_RESISTANCE;d=60;l=3} @Self
+  - sound{s=ENTITY_WITHER_HURT;v=5;p=0.5}
+  - setdisplaymeta{n='&0&l💀 L''Archonte du Nether [PHASE II] 💀'}
+
+Archonte_NetherStorm:
+  Cooldown: 10
+  Skills:
+  - fireball{v=2;hn=1;ml=40;size=1.5;yield=2} =8 @PlayersInRadius{r=20}
+  - sound{s=ENTITY_GHAST_SHOOT;v=3;p=0.8}
+
+Archonte_WitherAura:
+  Skills:
+  - potion{t=WITHER;d=80;l=0;radius=8} @PlayersInRadius{r=8}
+  - effect:particles{p=SOUL;amount=8;oy=1;radius=3} @Self
+
+Archonte_PhaseFinale:
+  Skills:
+  - message{m='&0&l☠ L''ARCHONTE DU NETHER ENTRE EN RAGE FINALE ! ☠'} @PlayersInRadius{r=80}
+  - potion{t=SPEED;d=999;l=2} @Self
+  - potion{t=STRENGTH;d=999;l=3} @Self
+  - potion{t=DAMAGE_RESISTANCE;d=999;l=1} @Self
+  - setdisplaymeta{n='&0&l☠ L''Archonte du Nether [RAGE FINALE] ☠'}
+
+Archonte_SoulRip:
+  Cooldown: 5
+  Skills:
+  - damage{a=35;ignoreArmor=true} @Target
+  - potion{t=WITHER;d=120;l=1} @Target
+  - effect:particles{p=SOUL;amount=40;oy=1} @Target
+  - message{m='&0L''Archonte déchire ton âme !'} @Target
+
+Archonte_Explosion:
+  Skills:
+  - effect:explosion{power=6;fire=true} @Self
+  - mob{m=BlazeInfernal;amount=6;radius=10} @Self
+  - message{m='&0&l... L''Archonte du Nether s''effondre. Le Nether pleure.'} @PlayersInRadius{r=80}
+  - sound{s=ENTITY_WITHER_DEATH;v=5;p=0.5}

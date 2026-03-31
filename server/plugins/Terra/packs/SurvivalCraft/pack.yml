@@ -1,0 +1,46 @@
+# ================================================================
+#  Terra Pack — SurvivalCraft
+#  Pack de génération de monde custom pour SurvivalCraft.
+#
+#  IMPORTANT : Ce pack requiert Terra 6.4+
+#  Pour activer : dans bukkit.yml, définir le générateur du monde
+#    sur "Terra:SurvivalCraft" AVANT la première génération.
+#
+#  ATTENTION : Si le monde "world" existe déjà avec la génération
+#  vanilla, changer le générateur n'affectera que les NOUVEAUX chunks.
+#  Pour un monde entièrement custom, supprime le dossier "world/"
+#  avant le premier lancement avec ce pack.
+# ================================================================
+
+id: "SurvivalCraft"
+version: "1.0.0"
+author: "SurvivalCraft Team"
+description: "Pack de biomes custom : Cavernes Cristallines, Forêt Bioluminescente, Désert Doré"
+
+# Étend le pack overworld par défaut (garde les biomes vanilla + ajoute les nôtres)
+extends: "OVERWORLD"
+
+# Activer les structures vanilla
+vanillaStructures: true
+
+# Configuration du générateur de surface
+# On garde le bruit de terrain vanilla et on remplace seulement certains biomes
+biomeProvider:
+  type: "PIPELINE"
+  resolution: 4
+  initial:
+    type: "SOURCE"
+    id: "OVERWORLD_BIOME_SOURCE"
+  stages:
+  - type: "REPLACE"
+    from: "DEEP_DARK"
+    to: "CRYSTALLINE_CAVES"
+    chance: 0.40
+  - type: "REPLACE"
+    from: "DARK_FOREST"
+    to: "BIOLUMINESCENT_FOREST"
+    chance: 0.35
+  - type: "REPLACE"
+    from: "DESERT"
+    to: "GOLDEN_SANDS"
+    chance: 0.30
