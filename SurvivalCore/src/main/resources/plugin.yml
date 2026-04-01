@@ -71,6 +71,9 @@ commands:
   arcs:
     description: Voir la progression des arcs narratifs
     permission: survival.arcs
+  mission:
+    description: Voir la mission hebdomadaire en cours
+    permission: survival.weekly
   # ── Serveur ──────────────────────────────────────────────────
   claim:
     description: Protéger un chunk
@@ -124,6 +127,8 @@ permissions:
   survival.skills:
     default: true
   survival.arcs:
+    default: true
+  survival.weekly:
     default: true
   survival.admin:
     default: op

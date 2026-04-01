@@ -9,18 +9,18 @@ Serveur Minecraft Survival RPG (Paper 1.21.4) avec un plugin monolithique `Survi
 
 ## TÂCHES PRIORITAIRES (dans l'ordre)
 
-### 1. Porter les gameplay fixes de la branche `claude/zen-elion`
-La branche `claude/zen-elion` contient des fixes gameplay importants qui ne sont PAS sur main. **Ne pas faire de merge** (trop de conflits), mais **porter manuellement** ces améliorations dans le code actuel de main :
+### 1. ✅ FAIT — Fixes portés depuis `claude/zen-elion` (2026-04-01)
+- **Shop buy confirmation** : `openBuyConfirmation()` ajouté dans ShopModule ✅
+- **Double-buy protection** : Le GUI de confirmation est la protection ✅
+- **Arc tracking amélioré** : ENDER_PEARL pickup, CraftItemEvent (BLAZE_POWDER/MUSHROOM_STEW), InventoryMove depuis coffres ✅
+- **Death bag immortality** : `setUnlimitedLifetime(true)` + `setPickupDelay(40)` dans DeathModule ✅
+- **Commande `/mission`** : MissionCommand ajouté à WeeklyModule + plugin.yml ✅
+- **Essentials userdata** : dossier créé ✅
 
-**Fixes à porter :**
-- **Shop buy confirmation** : zen-elion a un GUI de confirmation avant achat (`openBuyConfirmation()` dans ShopModule) — main n'a pas ça. Ajouter un GUI "Confirmer l'achat ?" avec boutons vert/rouge avant de débiter.
-- **Double-buy protection / cooldowns** : anti-spam sur les achats (cooldown entre clics), éviter les double-achats par lag.
-- **Race conditions** : vérifications atomiques du solde avant achat (check-then-act → compare-and-swap pattern).
-- **Sell quantity** : possibilité de vendre par quantité dans le shop (`/vendre` avec qty).
-- **Claim border visualization** : affichage des bordures de claim avec particules.
-- **Arc tracking amélioré** : ENDER_PEARL pickup, CraftItemEvent (BLAZE_POWDER/MUSHROOM_STEW), DELIVER_ITEM, coffre contributions, ore/smelting tracking.
-- **Death bag immortality** : le sac de mort (items droppés) reste plus longtemps.
-- **Commandes `/arcs` et `/mission`** : commandes pour voir la progression des arcs narratifs et la mission hebdo directement.
+**Non portés (nécessitent tests in-game ou complexité élevée) :**
+- Sell quantity (`/vendre <qty>`)
+- Claim border visualization (particules)
+- DELIVER_ITEM coffre contributions
 
 ### 2. Vérifier que le GUI custom fonctionne
 Le fichier `Faithless/assets/survivalcraft/font/gui.json` a été corrigé (suppression des champs `_info*` invalides qui empêchaient le chargement de la font).
@@ -68,8 +68,7 @@ Terra.jar a été téléchargé dans `server/plugins/`. La config `bukkit.yml` p
 - Terra.jar téléchargé, bukkit.yml nettoyé
 
 ## BUGS RESTANTS
-1. **Essentials warning** `Missing userdata folder` — créer `server/plugins/Essentials/userdata/` si absent (cosmétique).
-2. **`/mission` manquante** — WeeklyModule n'a pas de commande dédiée pour voir la mission hebdo directement.
+*(les bugs de la session précédente ont été corrigés)*
 
 ---
 

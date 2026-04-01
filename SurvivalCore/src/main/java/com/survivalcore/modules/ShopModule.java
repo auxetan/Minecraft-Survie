@@ -242,7 +242,7 @@ public class ShopModule implements CoreModule, Listener {
                     .lore(lore)
                     .asGuiItem(event -> {
                         if (event.isLeftClick()) {
-                            buyItem(player, shopItem, category);
+                            openBuyConfirmation(player, shopItem, category);
                         } else if (event.isRightClick() && shopItem.sellPrice > 0) {
                             sellItem(player, shopItem);
                         }
@@ -262,6 +262,53 @@ public class ShopModule implements CoreModule, Listener {
                 .asGuiItem(event -> openShopMain(player)));
 
         gui.open(player);
+    }
+
+    private void openBuyConfirmation(Player player, ShopItem item, ShopCategory category) {
+        EconomyModule eco = plugin.getModule(EconomyModule.class);
+        if (eco == null) return;
+
+        double finalPrice = item.buyPrice;
+        SkillModule skill = plugin.getModule(SkillModule.class);
+        boolean hasMerchant = skill != null && skill.hasSkill(player.getUniqueId(), "merchant");
+        if (hasMerchant) finalPrice *= 0.90;
+        final double price = finalPrice;
+
+        Gui confirmGui = Gui.gui()
+                .title(Component.text("§8✦ §eConfirmer l'achat §8✦"))
+                .rows(3)
+                .disableAllInteractions()
+                .create();
+
+        GuiItem filler = ItemBuilder.from(Material.BLACK_STAINED_GLASS_PANE)
+                .name(Component.text(" ")).asGuiItem();
+        confirmGui.getFiller().fill(filler);
+
+        List<Component> itemLore = new ArrayList<>();
+        itemLore.add(Component.text("§7─────────────────────"));
+        itemLore.add(Component.text("§7Prix : §6" + eco.formatMoney(price) + " ✦"));
+        if (hasMerchant) itemLore.add(Component.text("§a(-10% Marchand appliqué)"));
+        itemLore.add(Component.text("§7─────────────────────"));
+        confirmGui.setItem(13, ItemBuilder.from(item.material)
+                .name(Component.text("§f§l" + formatItemName(item.material.name())))
+                .lore(itemLore)
+                .asGuiItem());
+
+        confirmGui.setItem(11, ItemBuilder.from(Material.LIME_STAINED_GLASS_PANE)
+                .name(Component.text("§a§l✓ Confirmer"))
+                .lore(Component.text("§7Payer §6" + eco.formatMoney(price) + " ✦"))
+                .asGuiItem(e -> {
+                    buyItem(player, item, category);
+                    openCategoryShop(player, category);
+                }));
+
+        confirmGui.setItem(15, ItemBuilder.from(Material.RED_STAINED_GLASS_PANE)
+                .name(Component.text("§c§l✗ Annuler"))
+                .lore(Component.text("§7Retour au shop"))
+                .asGuiItem(e -> openCategoryShop(player, category)));
+
+        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
+        confirmGui.open(player);
     }
 
     private void buyItem(Player player, ShopItem item, ShopCategory category) {

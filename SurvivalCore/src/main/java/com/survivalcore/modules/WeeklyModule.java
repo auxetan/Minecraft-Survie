@@ -4,6 +4,9 @@ import com.survivalcore.SurvivalCore;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -63,6 +66,7 @@ public class WeeklyModule implements CoreModule, Listener {
 
         Bukkit.getPluginManager().registerEvents(this, plugin);
         scheduleMondayReset();
+        plugin.getCommand("mission").setExecutor(new MissionCommand());
 
         plugin.getLogger().info("Weekly module enabled — " + missionPool.size() + " missions dans le pool.");
     }
@@ -456,6 +460,60 @@ public class WeeklyModule implements CoreModule, Listener {
             }
         } catch (SQLException e) {
             plugin.getLogger().warning("Erreur sauvegarde sync weekly: " + e.getMessage());
+        }
+    }
+
+    // ─── Commande /mission ──────────────────────────────────────
+
+    private class MissionCommand implements CommandExecutor {
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§cCommande joueur uniquement.");
+                return true;
+            }
+
+            player.sendMessage("§d§l★ §eMission Hebdomadaire §d§l★");
+
+            if (currentMission == null) {
+                player.sendMessage("§7Aucune mission en cours cette semaine.");
+                return true;
+            }
+
+            UUID uuid = player.getUniqueId();
+            WeeklyProgress prog = participations.get(uuid);
+
+            player.sendMessage("§6" + currentMission.display);
+            player.sendMessage("§7" + currentMission.description);
+            player.sendMessage("§7Objectif : §e" + currentMission.amountPerPlayer + " §7par joueur");
+            player.sendMessage("§7Récompense : §6" + (int) currentMission.rewardMoney + " ✦ §7+ §b" + currentMission.rewardXp + " XP");
+
+            if (prog == null) {
+                player.sendMessage("§8Progression : §7Non commencée");
+            } else if (prog.completed) {
+                player.sendMessage("§a✓ §lMission accomplie cette semaine !");
+            } else {
+                String bar = makeProgressBar(prog.progress, currentMission.amountPerPlayer);
+                player.sendMessage("§7Progression : " + bar + " §e" + prog.progress + "§7/§e" + currentMission.amountPerPlayer);
+            }
+
+            int completedCount = (int) participations.values().stream().filter(p -> p.completed).count();
+            int totalPlayers = participations.size();
+            if (totalPlayers > 0) {
+                player.sendMessage("§7Équipe : §a" + completedCount + "§7/§a" + totalPlayers + " §7joueurs ont complété");
+            }
+            player.sendMessage("§7Semaine : §8" + currentWeek);
+            return true;
+        }
+
+        private String makeProgressBar(int current, int max) {
+            int filled = max > 0 ? Math.min((int) ((double) current / max * 10), 10) : 0;
+            StringBuilder bar = new StringBuilder("§a");
+            for (int i = 0; i < 10; i++) {
+                if (i == filled) bar.append("§7");
+                bar.append("█");
+            }
+            return bar.toString();
         }
     }
 
