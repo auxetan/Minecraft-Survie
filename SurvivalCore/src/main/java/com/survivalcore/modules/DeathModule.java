@@ -207,18 +207,21 @@ public class DeathModule implements CoreModule, Listener {
     // ─── Tête du Joueur (PvP) ───────────────────────────────────
 
     private void dropPlayerHead(Player victim, Location loc) {
+        Player killer = victim.getKiller();
+        if (killer == null) return;
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) head.getItemMeta();
+        if (meta == null) return;
         meta.setOwningPlayer(victim);
         meta.displayName(net.kyori.adventure.text.Component.text(
                 "§6☠ Tête de §e" + victim.getName()));
         meta.lore(java.util.List.of(
                 net.kyori.adventure.text.Component.text("§8Trophée de PvP"),
-                net.kyori.adventure.text.Component.text("§7Tué par §c" + victim.getKiller().getName())
+                net.kyori.adventure.text.Component.text("§7Tué par §c" + killer.getName())
         ));
         head.setItemMeta(meta);
         loc.getWorld().dropItemNaturally(loc, head);
-        victim.getKiller().sendMessage("§6☠ La tête de §e" + victim.getName() + " §6est tombée !");
+        killer.sendMessage("§6☠ La tête de §e" + victim.getName() + " §6est tombée !");
     }
 
     // ─── Sac de Mort ────────────────────────────────────────────

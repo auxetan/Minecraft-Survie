@@ -13,6 +13,9 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -64,6 +67,7 @@ public class SkillModule implements CoreModule, Listener {
         }
 
         Bukkit.getPluginManager().registerEvents(this, plugin);
+        plugin.getCommand("competences").setExecutor(new SkillCommand());
 
         plugin.getLogger().info("Skill module enabled — " + skillNodes.size() + " nœuds.");
     }
@@ -448,6 +452,7 @@ public class SkillModule implements CoreModule, Listener {
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
                     int generalXp = rs.getInt("general_xp");
+                    playerGeneralXp.put(uuid, generalXp);
                     int spentPoints = getTotalSpentPoints(uuid);
                     int totalPoints = generalXp / XP_PER_POINT;
                     int available = totalPoints - spentPoints;
@@ -469,6 +474,20 @@ public class SkillModule implements CoreModule, Listener {
             }
         }
         return total;
+    }
+
+    // ─── Commande /competences ────────────────────────────────────
+
+    private class SkillCommand implements CommandExecutor {
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§cCommande joueur uniquement.");
+                return true;
+            }
+            openSkillTree(player);
+            return true;
+        }
     }
 
     // ─── Data ───────────────────────────────────────────────────

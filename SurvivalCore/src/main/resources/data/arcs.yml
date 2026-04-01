@@ -16,7 +16,7 @@ arcs:
         hint: "Descends sous Y=-40 dans les grottes profondes"
       2:
         type: REACH_LOCATION
-        target: "0,−40,0"
+        target: "0,-40,0"
         radius: 200
         description: "Atteins les ruines anciennes"
         hint: "Cherche une structure en sculk"

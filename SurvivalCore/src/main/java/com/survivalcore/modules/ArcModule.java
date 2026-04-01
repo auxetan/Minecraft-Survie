@@ -12,6 +12,9 @@ import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -58,6 +61,7 @@ public class ArcModule implements CoreModule, Listener {
         }
 
         Bukkit.getPluginManager().registerEvents(this, plugin);
+        plugin.getCommand("arcs").setExecutor(new ArcsCommand());
         plugin.getLogger().info("Arc module enabled — " + arcDefinitions.size() + " arcs chargés.");
     }
 
@@ -72,6 +76,44 @@ public class ArcModule implements CoreModule, Listener {
     @Override
     public String getName() {
         return "Arc";
+    }
+
+    // ─── Commande /arcs ─────────────────────────────────────────
+
+    private class ArcsCommand implements CommandExecutor {
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§cCommande joueur uniquement.");
+                return true;
+            }
+            UUID uuid = player.getUniqueId();
+            ArcProgress prog = playerArcs.get(uuid);
+            if (prog == null) {
+                player.sendMessage("§8§m                                        ");
+                player.sendMessage("§6§l✦ ARCS D'EXPLORATION");
+                player.sendMessage("§7Aucun arc en cours.");
+                player.sendMessage("§7Les arcs se débloquent automatiquement");
+                player.sendMessage("§7en explorant le monde !");
+                player.sendMessage("§8§m                                        ");
+                return true;
+            }
+            ArcDefinition def = arcDefinitions.get(prog.arcId);
+            if (def == null) {
+                player.sendMessage("§cArc inconnu.");
+                return true;
+            }
+            player.sendMessage("§8§m                                        ");
+            player.sendMessage("§6§l✦ ARC : §e" + def.display);
+            player.sendMessage("§7Étape §b" + (prog.currentStep + 1) + "§7/" + def.steps.size());
+            if (prog.currentStep < def.steps.size()) {
+                ArcStep step = def.steps.get(prog.currentStep);
+                player.sendMessage("§7Objectif : §f" + step.description);
+                if (step.hint != null) player.sendMessage("§8Indice : §7" + step.hint);
+            }
+            player.sendMessage("§8§m                                        ");
+            return true;
+        }
     }
 
     // ─── Config ─────────────────────────────────────────────────
