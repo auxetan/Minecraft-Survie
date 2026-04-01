@@ -83,10 +83,9 @@ public final class SurvivalCore extends JavaPlugin {
             }
         }
 
-        // Commandes core
+        // Commandes core ("lobby" est un alias de "spawn" dans plugin.yml, pas besoin de l'enregistrer séparément)
         getCommand("admin").setExecutor(new AdminCommand());
         getCommand("spawn").setExecutor(new SpawnCommand());
-        getCommand("lobby").setExecutor(new SpawnCommand());
         getCommand("commandes").setExecutor(new CommandesCommand());
 
         getLogger().info("SurvivalCore — tous les modules sont chargés (" + modules.size() + " modules).");
