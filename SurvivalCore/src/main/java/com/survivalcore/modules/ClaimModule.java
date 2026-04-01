@@ -18,6 +18,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,6 +50,8 @@ public class ClaimModule implements CoreModule, Listener {
     private final Map<String, ClaimData> claimCache = new ConcurrentHashMap<>();
     // Cache : UUID → nombre de claims possédés
     private final Map<UUID, Integer> playerClaimCount = new ConcurrentHashMap<>();
+    // Cache : UUID → dernier chunk visité (pour détecter entrée/sortie de claim)
+    private final Map<UUID, String> lastChunkKey = new ConcurrentHashMap<>();
 
     @Override
     public void onEnable(SurvivalCore plugin) {
@@ -340,6 +345,55 @@ public class ClaimModule implements CoreModule, Listener {
 
     private GuiItem glassFill(Material mat) {
         return ItemBuilder.from(mat).name(Component.text(" ")).asGuiItem();
+    }
+
+    // ─── Claim Border — Action Bar & Particules ─────────────────
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        lastChunkKey.put(player.getUniqueId(), chunkKey(player.getLocation().getChunk()));
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        lastChunkKey.remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerMove(PlayerMoveEvent event) {
+        // Ignorer les mouvements sans changement de chunk
+        if (event.getFrom().getBlockX() >> 4 == event.getTo().getBlockX() >> 4
+                && event.getFrom().getBlockZ() >> 4 == event.getTo().getBlockZ() >> 4) return;
+
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        Chunk newChunk = event.getTo().getChunk();
+        String newKey = chunkKey(newChunk);
+        String prevKey = lastChunkKey.put(uuid, newKey);
+
+        if (newKey.equals(prevKey)) return;
+
+        ClaimData claim = claimCache.get(newKey);
+        if (claim != null) {
+            boolean isOwner = claim.ownerUuid.equals(uuid);
+            boolean isMember = claim.members.contains(uuid);
+            String ownerName = Bukkit.getOfflinePlayer(claim.ownerUuid).getName();
+            if (ownerName == null) ownerName = "Inconnu";
+
+            String bar;
+            if (isOwner) {
+                bar = "§a✦ Ton claim §8— §7Chunk [" + claim.chunkX + ", " + claim.chunkZ + "]";
+            } else if (isMember) {
+                bar = "§e✦ Claim de §f" + ownerName + " §e(accès autorisé)";
+            } else {
+                bar = "§c✦ Claim de §f" + ownerName + " §c(accès restreint)";
+            }
+            player.sendActionBar(net.kyori.adventure.text.Component.text(bar));
+            showClaimBorder(player, newChunk);
+        } else if (prevKey != null && claimCache.containsKey(prevKey)) {
+            player.sendActionBar(net.kyori.adventure.text.Component.text("§7Zone libre"));
+        }
     }
 
     // ─── Effets Visuels ─────────────────────────────────────────

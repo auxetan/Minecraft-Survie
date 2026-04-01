@@ -56,12 +56,28 @@ MINER:
     ANCIENT_DEBRIS:
       xp: 25
       money: 10.0
+    NETHER_GOLD_ORE:
+      xp: 6
+      money: 2.0
+    GILDED_BLACKSTONE:
+      xp: 4
+      money: 1.2
     STONE:
       xp: 1
       money: 0.1
     DEEPSLATE:
       xp: 1
       money: 0.1
+    # Fondre les minerais bruts rapporte moins d'XP que les miner directement
+    IRON_INGOT:
+      xp: 3
+      money: 0.8
+    GOLD_INGOT:
+      xp: 4
+      money: 1.2
+    COPPER_INGOT:
+      xp: 2
+      money: 0.5
 
 FARMER:
   display-name: "&a🌾 &fFermier"
@@ -200,6 +216,37 @@ LUMBERJACK:
       xp: 4
       money: 0.6
     WARPED_STEM:
+      xp: 4
+      money: 0.6
+    # Bois écorcés (même XP que leur variante normale)
+    STRIPPED_OAK_LOG:
+      xp: 2
+      money: 0.3
+    STRIPPED_SPRUCE_LOG:
+      xp: 2
+      money: 0.3
+    STRIPPED_BIRCH_LOG:
+      xp: 2
+      money: 0.3
+    STRIPPED_JUNGLE_LOG:
+      xp: 2
+      money: 0.3
+    STRIPPED_ACACIA_LOG:
+      xp: 2
+      money: 0.3
+    STRIPPED_DARK_OAK_LOG:
+      xp: 3
+      money: 0.4
+    STRIPPED_CHERRY_LOG:
+      xp: 3
+      money: 0.4
+    STRIPPED_MANGROVE_LOG:
+      xp: 3
+      money: 0.4
+    STRIPPED_CRIMSON_STEM:
+      xp: 4
+      money: 0.6
+    STRIPPED_WARPED_STEM:
       xp: 4
       money: 0.6
 

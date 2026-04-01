@@ -1,7 +1,8 @@
 # Configuration des missions hebdomadaires
-# Chaque lundi à minuit, une mission est tirée au sort
+# Chaque lundi à minuit, une mission est tirée au sort depuis ce pool
 
 missions:
+  # ── Combat ──────────────────────────────────────────────────────
   kill_wither_skeletons:
     type: KILL
     target: WITHER_SKELETON
@@ -10,15 +11,6 @@ missions:
     description: "Le Nether grouille de squelettes du Wither. Chaque aventurier doit en éliminer 10."
     reward-money: 300
     reward-xp: 500
-
-  gather_ancient_debris:
-    type: GATHER
-    target: ANCIENT_DEBRIS
-    amount_per_player: 3
-    display: "Récolter de l'Ancient Debris"
-    description: "Les forges ont besoin de Netherite. Rapportez 3 débris anciens chacun."
-    reward-money: 500
-    reward-xp: 800
 
   kill_endermen_mass:
     type: KILL
@@ -29,6 +21,70 @@ missions:
     reward-money: 400
     reward-xp: 600
 
+  kill_creepers:
+    type: KILL
+    target: CREEPER
+    amount_per_player: 30
+    display: "Extermination des Creepers"
+    description: "Les Creepers détruisent nos constructions. Éliminez-en 30 chacun."
+    reward-money: 250
+    reward-xp: 400
+
+  kill_blazes:
+    type: KILL
+    target: BLAZE
+    amount_per_player: 15
+    display: "Purge des Blazes"
+    description: "Les Blazes bloquent l'accès aux forteresses. 15 éliminations par joueur."
+    reward-money: 350
+    reward-xp: 550
+
+  kill_pillagers:
+    type: KILL
+    target: PILLAGER
+    amount_per_player: 25
+    display: "Répression des Pillards"
+    description: "Les pillards terrorisent les villages alentour. Neutralisez-en 25 chacun."
+    reward-money: 300
+    reward-xp: 480
+
+  kill_drowned:
+    type: KILL
+    target: DROWNED
+    amount_per_player: 20
+    display: "Nettoyage des Océans"
+    description: "Les Noyés infestent nos côtes. Chaque joueur doit en éliminer 20."
+    reward-money: 280
+    reward-xp: 420
+
+  kill_skeletons:
+    type: KILL
+    target: SKELETON
+    amount_per_player: 40
+    display: "La Nuit des Squelettes"
+    description: "Une horde de squelettes envahit les terres. 40 kills par joueur cette semaine."
+    reward-money: 220
+    reward-xp: 380
+
+  kill_zombies:
+    type: KILL
+    target: ZOMBIE
+    amount_per_player: 50
+    display: "Invasion de Zombies"
+    description: "L'apocalypse zombie approche. Tenez le front : 50 zombies chacun."
+    reward-money: 200
+    reward-xp: 350
+
+  # ── Récolte & Craft ────────────────────────────────────────────
+  gather_ancient_debris:
+    type: GATHER
+    target: ANCIENT_DEBRIS
+    amount_per_player: 3
+    display: "Récolter de l'Ancient Debris"
+    description: "Les forges ont besoin de Netherite. Rapportez 3 débris anciens chacun."
+    reward-money: 500
+    reward-xp: 800
+
   gather_diamonds_mass:
     type: GATHER
     target: DIAMOND
@@ -38,6 +94,52 @@ missions:
     reward-money: 500
     reward-xp: 700
 
+  gather_iron:
+    type: GATHER
+    target: IRON_INGOT
+    amount_per_player: 64
+    display: "La Ruée vers le Fer"
+    description: "L'armurerie manque de matières premières. Récoltez 64 lingots de fer chacun."
+    reward-money: 300
+    reward-xp: 450
+
+  gather_wool:
+    type: GATHER
+    target: WHITE_WOOL
+    amount_per_player: 64
+    display: "La Récolte de Laine"
+    description: "Les marchands ont besoin de laine. Tondez vos moutons : 64 laines par joueur."
+    reward-money: 200
+    reward-xp: 350
+
+  gather_food:
+    type: GATHER
+    target: COOKED_BEEF
+    amount_per_player: 32
+    display: "Approvisionner les Cuisines"
+    description: "Nos cuisines sont vides. Préparez 32 steaks cuits chacun."
+    reward-money: 250
+    reward-xp: 380
+
+  gather_obsidian:
+    type: GATHER
+    target: OBSIDIAN
+    amount_per_player: 32
+    display: "La Collecte d'Obsidienne"
+    description: "Pour construire le portail collectif. 32 blocs d'obsidienne par joueur."
+    reward-money: 400
+    reward-xp: 600
+
+  gather_sugar_cane:
+    type: GATHER
+    target: SUGAR_CANE
+    amount_per_player: 128
+    display: "La Récolte de Canne à Sucre"
+    description: "Les parchemins manquent. 128 cannes à sucre par joueur pour la bibliothèque."
+    reward-money: 180
+    reward-xp: 300
+
+  # ── Exploration ────────────────────────────────────────────────
   explore_nether:
     type: TRAVEL
     target: WALK_NETHER
@@ -46,3 +148,12 @@ missions:
     description: "Explorez les terres brûlantes du Nether. Parcourez 2000 blocs chacun."
     reward-money: 350
     reward-xp: 500
+
+  explore_overworld:
+    type: TRAVEL
+    target: WALK
+    amount_per_player: 5000
+    display: "Grand Tour de l'Overworld"
+    description: "Découvrez les terres lointaines ! 5000 blocs parcourus cette semaine."
+    reward-money: 300
+    reward-xp: 450
