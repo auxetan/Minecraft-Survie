@@ -33,7 +33,7 @@ settings:
 
 worlds:
   world:
-    generator: Terra:SurvivalCraft
+    generator: Terra:OVERWORLD
 
 # ── Configuration du spawn ────────────────────────────────────────
 spawn-limits:
