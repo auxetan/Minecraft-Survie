@@ -5,7 +5,10 @@ import com.survivalcore.data.DatabaseManager;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -66,6 +69,10 @@ public class JobModule implements CoreModule, Listener {
     private final Map<UUID, java.util.concurrent.atomic.AtomicInteger> pendingKillsMobs = new ConcurrentHashMap<>();
     private final Map<UUID, java.util.concurrent.atomic.AtomicInteger> pendingKillsPlayers = new ConcurrentHashMap<>();
 
+    // Boss bars XP job — une par joueur, masquée après 5s d'inactivité
+    private final Map<UUID, BossBar> xpBossBars = new ConcurrentHashMap<>();
+    private final Map<UUID, Integer> xpBarHideTasks = new ConcurrentHashMap<>();
+
     // Leveling config
     private int baseXp = 100;
     private double exponent = 1.5;
@@ -95,6 +102,13 @@ public class JobModule implements CoreModule, Listener {
 
     @Override
     public void onDisable() {
+        // Masquer toutes les boss bars XP
+        for (Map.Entry<UUID, BossBar> entry : xpBossBars.entrySet()) {
+            Player p = Bukkit.getPlayer(entry.getKey());
+            if (p != null) p.hideBossBar(entry.getValue());
+        }
+        xpBossBars.clear();
+        xpBarHideTasks.clear();
         // Vider les compteurs de stats avant la fermeture
         flushStatCounters();
         // Sauvegarder toutes les données
@@ -250,6 +264,9 @@ public class JobModule implements CoreModule, Listener {
         data.xp += xp;
         checkLevelUp(player, data);
 
+        // Afficher la boss bar XP
+        showXpBossBar(player, data, xp);
+
         // Sauvegarder async
         savePlayerJobAsync(uuid, data);
 
@@ -273,6 +290,47 @@ public class JobModule implements CoreModule, Listener {
             // Vérifier les paliers de récompenses
             checkMilestone(player, data);
         }
+    }
+
+    // ─── Boss Bar XP ────────────────────────────────────────────
+
+    private void showXpBossBar(Player player, JobData data, int xpGained) {
+        UUID uuid = player.getUniqueId();
+        int required = xpForLevel(data.level + 1);
+        float progress = Math.min(1.0f, Math.max(0f, (float) data.xp / required));
+        String jobName = getJobDisplayName(data.jobId);
+
+        Component title = Component.text("✦ ", NamedTextColor.GOLD)
+                .append(Component.text(jobName, NamedTextColor.YELLOW, TextDecoration.BOLD))
+                .append(Component.text(" Niv." + data.level, NamedTextColor.WHITE))
+                .append(Component.text(" — ", NamedTextColor.DARK_GRAY))
+                .append(Component.text(data.xp + "/" + required + " XP", NamedTextColor.AQUA))
+                .append(Component.text(" (+" + xpGained + ")", NamedTextColor.GREEN));
+
+        BossBar bar = xpBossBars.get(uuid);
+        if (bar == null) {
+            bar = BossBar.bossBar(title, progress, BossBar.Color.YELLOW, BossBar.Overlay.NOTCHED_10);
+            xpBossBars.put(uuid, bar);
+            player.showBossBar(bar);
+        } else {
+            bar.name(title);
+            bar.progress(progress);
+        }
+
+        // Annuler le précédent task de masquage
+        Integer oldTask = xpBarHideTasks.remove(uuid);
+        if (oldTask != null) {
+            Bukkit.getScheduler().cancelTask(oldTask);
+        }
+
+        // Masquer après 4 secondes d'inactivité
+        BossBar finalBar = bar;
+        int taskId = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            player.hideBossBar(finalBar);
+            xpBossBars.remove(uuid);
+            xpBarHideTasks.remove(uuid);
+        }, 80L).getTaskId(); // 80 ticks = 4 secondes
+        xpBarHideTasks.put(uuid, taskId);
     }
 
     // ─── Paliers de Récompenses ────────────────────────────────
@@ -636,6 +694,11 @@ public class JobModule implements CoreModule, Listener {
     @EventHandler
     public void onPlayerQuit(org.bukkit.event.player.PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
+        // Nettoyer la boss bar XP
+        BossBar bar = xpBossBars.remove(uuid);
+        if (bar != null) event.getPlayer().hideBossBar(bar);
+        Integer hideTask = xpBarHideTasks.remove(uuid);
+        if (hideTask != null) Bukkit.getScheduler().cancelTask(hideTask);
         // Vider les compteurs du joueur avant qu'il parte
         flushPlayerCounters(uuid);
         JobData data = playerJobs.remove(uuid);

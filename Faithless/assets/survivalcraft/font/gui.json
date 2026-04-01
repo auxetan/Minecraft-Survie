@@ -1,9 +1,6 @@
 {
   "providers": [
     {
-      "_info": "=== NegativeSpaceFont (AmberWat - public domain) ===",
-      "_info2": "Space characters with custom advance widths for pixel-perfect glyph positioning.",
-      "_info3": "Negative advance = shift rendering LEFT; positive = shift RIGHT.",
       "type": "space",
       "advances": {
         "\uF001":  1,  "\uF002":  2,  "\uF003":  3,  "\uF004":  4,
@@ -18,13 +15,6 @@
       }
     },
     {
-      "_info": "=== SurvivalCraft GUI Backgrounds ===",
-      "_info2": "Background textures for custom inventory GUIs (Paladium style).",
-      "_info3": "height=256 ascent=22 aligns over a 6-row chest inventory title bar.",
-      "_info4": "PNG files must be 512x256 pixels (or 352x168 for 6-row chest match).",
-      "_info5": "Place PNGs in: Faithless/assets/survivalcraft/textures/gui/",
-      "_info6": "Prepend shift char \\uF0FC (-32px) then \\uF0FB (-16px) to align left edge.",
-
       "type": "bitmap",
       "file": "survivalcraft:gui/market_bg.png",
       "ascent": 22,

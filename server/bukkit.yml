@@ -34,10 +34,6 @@ settings:
 worlds:
   world:
     generator: Terra:SurvivalCraft
-  world_nether:
-    generator: default
-  world_the_end:
-    generator: default
 
 # ── Configuration du spawn ────────────────────────────────────────
 spawn-limits:
