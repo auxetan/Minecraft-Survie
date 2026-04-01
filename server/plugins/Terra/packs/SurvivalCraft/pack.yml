@@ -12,6 +12,9 @@ description: "11 biomes custom : Cavernes Cristallines, Forêt Bioluminescente, 
 # Étend le pack overworld officiel de Terra (inclut tous les biomes vanilla)
 extends: "OVERWORLD"
 
+# Générateur de terrain (requis par Terra 6.x même lors d'un extends)
+generator: NOISE_3D
+
 # Activer la génération des structures vanilla standard
 vanillaStructures: true
 
