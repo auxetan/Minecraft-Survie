@@ -19,11 +19,14 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Module ModPage — envoie aux nouveaux joueurs un lien cliquable vers la page
@@ -53,6 +56,9 @@ public class ModPageModule implements CoreModule, Listener {
 
         // Sauvegarder le HTML par défaut si absent
         saveDefaultHtml();
+
+        // Créer faithless.zip si absent (remplace build-pack.bat / start.sh)
+        ensureFaithlessZip();
 
         // Démarrer le serveur HTTP
         startHttpServer();
@@ -162,6 +168,45 @@ public class ModPageModule implements CoreModule, Listener {
             plugin.getLogger().info("mods-page.html sauvegardé dans " + htmlFile.getPath());
         } catch (IOException e) {
             plugin.getLogger().log(Level.WARNING, "Impossible de sauvegarder mods-page.html", e);
+        }
+    }
+
+    // ─── Resource Pack Auto-Zip ─────────────────────────────────
+
+    private void ensureFaithlessZip() {
+        File serverDir = plugin.getDataFolder().getParentFile().getParentFile();
+        File zipFile = new File(serverDir, "faithless.zip");
+        File faithlessDir = new File(serverDir.getParentFile(), "Faithless");
+
+        if (zipFile.exists() && zipFile.length() > 0) return;
+        if (!faithlessDir.isDirectory()) {
+            plugin.getLogger().warning("Faithless/ introuvable — resource pack non créé. "
+                    + "Attendu: " + faithlessDir.getAbsolutePath());
+            return;
+        }
+
+        plugin.getLogger().info("faithless.zip absent — création depuis Faithless/...");
+        try {
+            Path source = faithlessDir.toPath();
+            try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
+                Files.walk(source)
+                        .filter(p -> !Files.isDirectory(p))
+                        .filter(p -> !p.getFileName().toString().equals(".DS_Store"))
+                        .filter(p -> !p.getFileName().toString().startsWith("__MACOSX"))
+                        .forEach(p -> {
+                            try {
+                                String entry = source.relativize(p).toString().replace("\\", "/");
+                                zos.putNextEntry(new ZipEntry(entry));
+                                Files.copy(p, zos);
+                                zos.closeEntry();
+                            } catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
+                        });
+            }
+            plugin.getLogger().info("faithless.zip créé (" + (zipFile.length() / 1024) + " KB)");
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.WARNING, "Erreur création faithless.zip", e);
         }
     }
 
