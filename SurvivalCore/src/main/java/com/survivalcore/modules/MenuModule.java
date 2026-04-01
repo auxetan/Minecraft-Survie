@@ -337,25 +337,45 @@ public class MenuModule implements CoreModule, Listener {
         if (skullMeta != null) {
             skullMeta.setOwningPlayer(player);
 
-            // Get player stats/data
             int money = getPlayerMoney(player);
             int questsCompleted = getQuestsCompletedToday(player);
             String classInfo = getPlayerClassName(player);
-            String jobInfo = getPlayerJobInfo(player);
             String weeklyStatus = getWeeklyStatus(player);
 
-            skullMeta.displayName(Component.text("§b" + player.getName() + "'s Profil"));
-            skullMeta.lore(java.util.List.of(
-                    Component.text("§7───────────────────────"),
-                    Component.text("§bClasse: §f" + classInfo),
-                    Component.text("§eJob: §f" + jobInfo),
-                    Component.text(""),
-                    Component.text("§6Argent: §f" + money + " ✦"),
-                    Component.text("§eQuêtes (aujourd'hui): §f" + questsCompleted),
-                    Component.text("§dMission Hebdo: §f" + weeklyStatus),
-                    Component.text("§7───────────────────────")
-            ));
+            java.util.List<Component> lore = new java.util.ArrayList<>();
+            lore.add(Component.text("§8─────────────────────────"));
+            lore.add(Component.text("§7Classe : §b" + classInfo));
+            lore.add(Component.text("§8─────────────────────────"));
 
+            // Afficher tous les métiers avec leurs niveaux
+            JobModule jobModule = plugin.getModule(JobModule.class);
+            if (jobModule != null) {
+                java.util.Map<String, JobModule.JobProgress> allJobs = jobModule.getAllJobs(player.getUniqueId());
+                if (allJobs.isEmpty()) {
+                    lore.add(Component.text("§7Métiers : §8Aucune progression"));
+                } else {
+                    lore.add(Component.text("§e✦ Métiers :"));
+                    for (String jobId : jobModule.getJobIds()) {
+                        JobModule.JobProgress prog = allJobs.getOrDefault(jobId, new JobModule.JobProgress(0, 1));
+                        String jobName = jobModule.getJobDisplayName(jobId);
+                        int req = jobModule.xpForLevel(prog.level + 1);
+                        int pct = req > 0 ? (int)((double) prog.xp / req * 100) : 0;
+                        String bar = prog.level > 1 || prog.xp > 0
+                                ? "§8[§a" + "█".repeat(pct / 10) + "§8" + "█".repeat(10 - pct / 10) + "§8] "
+                                : "§8[" + "█".repeat(10) + "§8] ";
+                        lore.add(Component.text("  §7" + jobName + " §8Niv.§f" + prog.level + " " + bar + "§8(" + pct + "%)"));
+                    }
+                }
+            }
+
+            lore.add(Component.text("§8─────────────────────────"));
+            lore.add(Component.text("§6Argent : §f" + money + " ✦"));
+            lore.add(Component.text("§aQuêtes : §f" + questsCompleted + "§7/3 aujourd'hui"));
+            lore.add(Component.text("§dMission Hebdo : §f" + weeklyStatus));
+            lore.add(Component.text("§8─────────────────────────"));
+
+            skullMeta.displayName(Component.text("§b§l" + player.getName()));
+            skullMeta.lore(lore);
             head.setItemMeta(skullMeta);
         }
 
@@ -426,9 +446,11 @@ public class MenuModule implements CoreModule, Listener {
         if (quest == null) return;
 
         var quests = quest.getPlayerQuests(player.getUniqueId());
+        int doneCount = (int) quests.stream().filter(q -> q.completed).count();
+
         Gui gui = Gui.gui()
-                .title(GuiBackground.QUEST.title("§8✦ §eQuêtes du Jour §8✦"))
-                .rows(3)
+                .title(GuiBackground.QUEST.title("§0✦ §e§lQuêtes du Jour §0✦"))
+                .rows(4)
                 .disableAllInteractions()
                 .create();
 
@@ -436,24 +458,61 @@ public class MenuModule implements CoreModule, Listener {
                 .name(Component.text(" ")).asGuiItem();
         gui.getFiller().fill(filler);
 
+        // Header doré
+        GuiItem golden = ItemBuilder.from(Material.YELLOW_STAINED_GLASS_PANE)
+                .name(Component.text(" ")).asGuiItem();
+        for (int i = 0; i < 9; i++) {
+            if (i != 4) gui.setItem(i, golden);
+        }
+
+        // Titre centré
+        gui.setItem(4, ItemBuilder.from(Material.BOOK)
+                .name(Component.text("§e§lQuêtes du Jour"))
+                .lore(
+                        Component.text("§7Complétées : §a" + doneCount + "§7/§f3"),
+                        Component.text("§7" + (doneCount == 3 ? "§a✦ Toutes les quêtes accomplies !" : "§8Reviens demain pour de nouvelles quêtes"))
+                )
+                .asGuiItem());
+
+        // 3 quêtes sur slots 11, 13, 15 (row 1 centrée)
         int[] slots = {11, 13, 15};
+        String[] diffColors = {"§a", "§e", "§c"};
+
         for (int i = 0; i < Math.min(3, quests.size()); i++) {
             QuestModule.ActiveQuest q = quests.get(i);
-            Material icon = q.completed ? Material.LIME_DYE : Material.PAPER;
-            String status = q.completed ? "§a✓ Terminée" : "§7" + q.progress + "/" + q.definition.amount;
+            boolean done = q.completed;
+            Material icon = done ? Material.LIME_DYE
+                    : q.definition.difficulty.equals("HARD") ? Material.PAPER
+                    : q.definition.difficulty.equals("MEDIUM") ? Material.PAPER
+                    : Material.PAPER;
+            String diffColor = switch (q.definition.difficulty) {
+                case "HARD" -> "§c";
+                case "MEDIUM" -> "§e";
+                default -> "§a";
+            };
 
-            gui.setItem(slots[i], ItemBuilder.from(icon)
-                    .name(Component.text((q.completed ? "§a" : "§e") + q.definition.display))
-                    .lore(
-                            Component.text("§7Type : §f" + q.definition.type),
-                            Component.text("§7Progression : " + status),
-                            Component.text("§7Récompense : §6" + (int) q.definition.rewardMoney + " ✦ §7+ §b" + q.definition.rewardXp + " XP")
-                    )
+            int pct = q.definition.amount > 0 ? (int)((double) q.progress / q.definition.amount * 100) : 0;
+            String bar = "§a" + "█".repeat(pct / 10) + "§8" + "█".repeat(10 - pct / 10);
+
+            java.util.List<Component> lore = new java.util.ArrayList<>();
+            lore.add(Component.text("§8─────────────────────────"));
+            lore.add(Component.text("§7Difficulté : " + diffColor + q.definition.difficulty));
+            lore.add(Component.text("§8─────────────────────────"));
+            lore.add(Component.text("§7Progression : §f" + q.progress + "§8/§f" + q.definition.amount));
+            lore.add(Component.text(bar + " §8(" + pct + "%)"));
+            lore.add(Component.text("§8─────────────────────────"));
+            lore.add(Component.text("§6Récompense : §f" + (int) q.definition.rewardMoney + " ✦ §8+ §b" + q.definition.rewardXp + " XP"));
+            if (done) lore.add(Component.text("§a§l✓ QUÊTE ACCOMPLIE !"));
+
+            Material finalIcon = done ? Material.LIME_DYE : Material.PAPER;
+            gui.setItem(slots[i], ItemBuilder.from(finalIcon)
+                    .name(Component.text((done ? "§a§l" : "§e§l") + q.definition.display))
+                    .lore(lore)
                     .asGuiItem());
         }
 
-        // Back button
-        gui.setItem(22, ItemBuilder.from(Material.ARROW)
+        // Bouton retour
+        gui.setItem(31, ItemBuilder.from(Material.ARROW)
                 .name(Component.text("§7← Retour au Menu"))
                 .asGuiItem(e -> openMainMenu(player)));
 

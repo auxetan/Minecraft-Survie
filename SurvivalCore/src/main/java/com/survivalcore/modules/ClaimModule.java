@@ -104,9 +104,21 @@ public class ClaimModule implements CoreModule, Listener {
 
     /**
      * Ajoute des slots de claim bonus (accordés via les milestones de métier).
+     * Persisté en DB pour survivre aux redémarrages.
      */
     public void addBonusClaims(UUID uuid, int amount) {
-        bonusClaims.merge(uuid, amount, Integer::sum);
+        int newTotal = bonusClaims.merge(uuid, amount, Integer::sum);
+        // Persister en DB
+        plugin.getDatabaseManager().runAsync(conn -> {
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE players SET bonus_claims = ? WHERE uuid = ?")) {
+                ps.setInt(1, newTotal);
+                ps.setString(2, uuid.toString());
+                ps.executeUpdate();
+            } catch (java.sql.SQLException e) {
+                plugin.getLogger().warning("Erreur sauvegarde bonus_claims: " + e.getMessage());
+            }
+        });
     }
 
     public int getClaimCount(UUID uuid) {
@@ -363,7 +375,20 @@ public class ClaimModule implements CoreModule, Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        lastChunkKey.put(player.getUniqueId(), chunkKey(player.getLocation().getChunk()));
+        UUID uuid = player.getUniqueId();
+        lastChunkKey.put(uuid, chunkKey(player.getLocation().getChunk()));
+        // Charger les bonus claims depuis la DB
+        plugin.getDatabaseManager().executeAsync(conn -> {
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                    "SELECT bonus_claims FROM players WHERE uuid = ?")) {
+                ps.setString(1, uuid.toString());
+                java.sql.ResultSet rs = ps.executeQuery();
+                if (rs.next()) return rs.getInt("bonus_claims");
+            } catch (java.sql.SQLException e) {
+                plugin.getLogger().warning("Erreur chargement bonus_claims: " + e.getMessage());
+            }
+            return 0;
+        }).thenAccept(bonus -> bonusClaims.put(uuid, bonus));
     }
 
     @EventHandler

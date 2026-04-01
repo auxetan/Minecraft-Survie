@@ -140,7 +140,7 @@ public class SkillModule implements CoreModule, Listener {
         int unlockedCount = owned.size();
 
         Gui gui = Gui.gui()
-                .title(GuiBackground.SKILLS.title("§8✦ §bArbre de Compétences §8✦"))
+                .title(GuiBackground.SKILLS.title("§0✦ §b§lCompétences §0✦"))
                 .rows(6)
                 .disableAllInteractions()
                 .create();
@@ -150,30 +150,34 @@ public class SkillModule implements CoreModule, Listener {
                 .name(Component.text(" ")).asGuiItem();
         gui.getFiller().fill(filler);
 
-        // Row 1: Header border (light blue glass) + info item at slot 4
+        // Row 0 : Header bleu clair
         GuiItem headerBorder = ItemBuilder.from(Material.LIGHT_BLUE_STAINED_GLASS_PANE)
                 .name(Component.text(" ")).asGuiItem();
         for (int i = 0; i < 9; i++) {
-            if (i != 3) {
-                gui.setItem(i, headerBorder);
-            }
+            if (i != 4) gui.setItem(i, headerBorder);
         }
 
-        // Info item at slot 4 (TriumphGUI uses 1-indexed, so slot 4 is index 3)
+        // Slot 4 : Infos joueur
+        int nextPoint = XP_PER_POINT - (generalXp % XP_PER_POINT);
         ItemStack infoItem = new ItemStack(Material.ENCHANTED_BOOK);
         ItemMeta infoMeta = infoItem.getItemMeta();
-        infoMeta.displayName(Component.text("§6Arbre de Compétences"));
+        infoMeta.displayName(Component.text("§b§lArbre de Compétences"));
         infoMeta.lore(List.of(
-                Component.text("§7Points disponibles: §a" + points),
-                Component.text("§7XP Générale: §b" + generalXp),
-                Component.text("§7Compétences débloquées: §e" + unlockedCount + "§7/10")
+                Component.text("§8─────────────────────────"),
+                Component.text("§7Points disponibles : §a§l" + points),
+                Component.text("§7XP Générale : §b" + generalXp + " §8XP"),
+                Component.text("§7Prochain point dans : §e" + nextPoint + " XP"),
+                Component.text("§8─────────────────────────"),
+                Component.text("§7Débloquées : §e" + unlockedCount + "§7/10"),
+                Component.text("§8─────────────────────────"),
+                Component.text("§81 point tous les §7" + XP_PER_POINT + " XP générales")
         ));
         infoItem.setItemMeta(infoMeta);
-        gui.setItem(3, new GuiItem(infoItem));
+        gui.setItem(4, new GuiItem(infoItem));
 
-        // Add chain connector between resistance_1 (slot 10) and resistance_2 (slot 19)
+        // Connecteur chaîne entre resistance_1 (slot 10) et resistance_2 (slot 19)
         gui.setItem(18, ItemBuilder.from(Material.CHAIN)
-                .name(Component.text(" ")).asGuiItem());
+                .name(Component.text("§8▲ Prérequis")).asGuiItem());
 
         // Place skill nodes
         for (SkillNode node : skillNodes) {
@@ -237,12 +241,18 @@ public class SkillModule implements CoreModule, Listener {
             gui.setItem(node.slot, item);
         }
 
-        // Row 6: Bottom border
+        // Row 6: Bottom border + bouton retour menu
         GuiItem bottomBorder = ItemBuilder.from(Material.LIGHT_BLUE_STAINED_GLASS_PANE)
                 .name(Component.text(" ")).asGuiItem();
         for (int i = 45; i < 54; i++) {
-            gui.setItem(i, bottomBorder);
+            if (i != 49) gui.setItem(i, bottomBorder);
         }
+        gui.setItem(49, ItemBuilder.from(Material.ARROW)
+                .name(Component.text("§7← Retour au Menu"))
+                .asGuiItem(e -> {
+                    MenuModule menu = plugin.getModule(MenuModule.class);
+                    if (menu != null) menu.openMainMenu(player);
+                }));
 
         gui.open(player);
     }

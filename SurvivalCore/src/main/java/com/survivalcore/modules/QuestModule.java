@@ -369,13 +369,12 @@ public class QuestModule implements CoreModule, Listener {
             org.bukkit.Location loc = player.getLocation();
             Biome biome = loc.getWorld().getBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             String biomeKey = biome.getKey().getKey().toLowerCase();
-            // Also try the full namespaced key for Terra custom biomes (e.g. "survivalcraft/crystalline_caves")
-            progressQuest(uuid, "EXPLORE", biomeKey, 1);
-            // Terra biomes sometimes use namespace/id format — try just the last segment
+            // Utiliser toujours le nom court (dernier segment) pour compatibilité
+            // biomes vanilla : "desert" → "desert"
+            // biomes Terra  : "survivalcraft/crystalline_caves" → "crystalline_caves"
             String[] parts = biomeKey.split("[/:]");
-            if (parts.length > 1) {
-                progressQuest(uuid, "EXPLORE", parts[parts.length - 1], 1);
-            }
+            String targetBiome = parts[parts.length - 1];
+            progressQuest(uuid, "EXPLORE", targetBiome, 1);
         } catch (Exception ignored) {
             // Biome lookup can occasionally fail; just skip
         }

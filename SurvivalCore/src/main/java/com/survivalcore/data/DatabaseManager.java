@@ -103,6 +103,8 @@ public class DatabaseManager {
             catch (SQLException ignored) {}
             try { stmt.execute("ALTER TABLE players ADD COLUMN last_quest_date TEXT"); }
             catch (SQLException ignored) {}
+            try { stmt.execute("ALTER TABLE players ADD COLUMN bonus_claims INTEGER DEFAULT 0"); }
+            catch (SQLException ignored) {}
 
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS skills (

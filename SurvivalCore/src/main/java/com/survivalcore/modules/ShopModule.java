@@ -320,12 +320,15 @@ public class ShopModule implements CoreModule, Listener {
             return;
         }
 
-        // Stock légendaire
+        // Stock légendaire — vérification + décrémentation atomique (thread-safe)
         if (category.isLegendary) {
-            int remaining = legendaryStock.getOrDefault(item.material.name(), 0);
-            if (remaining <= 0) {
-                player.sendMessage("§cStock épuisé pour cet item !");
-                return;
+            synchronized (legendaryStock) {
+                int remaining = legendaryStock.getOrDefault(item.material.name(), 0);
+                if (remaining <= 0) {
+                    player.sendMessage("§cStock épuisé pour cet item !");
+                    return;
+                }
+                legendaryStock.put(item.material.name(), remaining - 1);
             }
         }
 
@@ -350,10 +353,7 @@ public class ShopModule implements CoreModule, Listener {
             player.sendMessage("§7(Item droppé au sol — inventaire plein)");
         }
 
-        // Décrémenter stock légendaire
-        if (category.isLegendary) {
-            legendaryStock.merge(item.material.name(), -1, Integer::sum);
-        }
+        // Stock déjà décrémenté de façon atomique plus haut (synchronized block)
 
         String msg = "§a✦ Acheté §f" + formatItemName(item.material.name()) + " §apour §6" + eco.formatMoney(finalPrice);
         if (finalPrice < item.buyPrice) msg += " §a(§e-10% Marchand§a)";
@@ -482,6 +482,13 @@ public class ShopModule implements CoreModule, Listener {
     private void buyFromMarket(Player player, MarketListing listing, ItemStack itemToGive) {
         EconomyModule eco = plugin.getModule(EconomyModule.class);
         if (eco == null) return;
+
+        // Empêcher l'auto-achat (money glitch)
+        if (listing.sellerUuid.equals(player.getUniqueId().toString())) {
+            player.sendMessage("§c✗ Tu ne peux pas racheter ton propre item !");
+            player.closeInventory();
+            return;
+        }
 
         if (!eco.withdraw(player.getUniqueId(), listing.price)) {
             player.sendMessage("§cFonds insuffisants !");

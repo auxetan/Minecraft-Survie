@@ -503,16 +503,20 @@ public class JobModule implements CoreModule, Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
-        String mat = event.getBlock().getType().name();
+        Block block = event.getBlock();
+        String mat = block.getType().name();
 
         // Stats globales (débounce)
         pendingBlocksMined.computeIfAbsent(player.getUniqueId(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
 
-        // Fermier : uniquement cultures matures
-        if (isMatureCrop(event.getBlock())) {
-            rewardAction(player, mat);
+        // Cultures Ageable (blé, carottes, etc.) : XP seulement si mature
+        // Les autres blocs (minerais, bois, etc.) récompensent toujours
+        if (block.getBlockData() instanceof org.bukkit.block.data.Ageable) {
+            if (isMatureCrop(block)) {
+                rewardAction(player, mat);
+            }
+            // Culture immature → pas d'XP (évite le farm de pousse)
         } else {
-            // Mineur + Bûcheron : autres blocs
             rewardAction(player, mat);
         }
     }
@@ -751,37 +755,73 @@ public class JobModule implements CoreModule, Listener {
         List<String> jobIds = getJobIds();
 
         Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §eMes Métiers §8✦"))
+                .title(Component.text("§0✦ §e§lMes Métiers §0✦"))
                 .rows(6)
                 .disableAllInteractions()
                 .create();
 
         // Fond noir
-        GuiItem border = ItemBuilder.from(Material.BLACK_STAINED_GLASS_PANE)
+        GuiItem black = ItemBuilder.from(Material.BLACK_STAINED_GLASS_PANE)
                 .name(Component.text(" ")).asGuiItem();
-        gui.getFiller().fill(border);
+        gui.getFiller().fill(black);
 
-        // Header — titre
+        // ── Row 0 : Header doré ──────────────────────────────────
+        GuiItem golden = ItemBuilder.from(Material.YELLOW_STAINED_GLASS_PANE)
+                .name(Component.text(" ")).asGuiItem();
+        for (int i = 0; i < 9; i++) {
+            if (i != 4) gui.setItem(i, golden);
+        }
+
+        // Calcul des niveaux totaux pour l'en-tête
+        int totalLevels = jobs.values().stream().mapToInt(p -> p.level).sum();
+        int maxLevel = jobIds.size() * this.maxLevel;
+
         gui.setItem(4, ItemBuilder.from(Material.NETHER_STAR)
-                .name(Component.text("§f§lMes Métiers"))
+                .name(Component.text("§e§lMes Métiers"))
                 .lore(
-                        Component.text("§7Tous les métiers sont actifs"),
-                        Component.text("§7simultanément. Gagne de l'XP"),
-                        Component.text("§7en jouant normalement !"),
+                        Component.text("§7Tous les métiers sont actifs simultanément."),
+                        Component.text("§7Gagne de l'XP en jouant normalement !"),
                         Component.text(""),
-                        Component.text("§8Clic sur un métier → détails")
+                        Component.text("§8Niveaux totaux : §e" + totalLevels + "§8/§7" + maxLevel),
+                        Component.text(""),
+                        Component.text("§8▶ Clique sur un métier pour les détails")
                 )
                 .asGuiItem());
 
-        // Cards des métiers — slots : 10,12,14,16 (row2) + 28,30 (row4) pour 6 jobs max
-        int[] jobSlots = {10, 12, 14, 16, 28, 30};
-        for (int i = 0; i < jobIds.size() && i < jobSlots.length; i++) {
-            String jobId = jobIds.get(i);
-            JobProgress prog = jobs.getOrDefault(jobId, new JobProgress(0, 1));
-            addJobCard(gui, player, jobId, prog, jobSlots[i]);
+        // ── Row 1 : 3 premiers métiers (slots 10, 12, 14) ────────
+        // Séparateurs colorés autour de chaque carte
+        // Layout : 9 | [col] | [job] | [col] | [job] | [col] | [job] | [col] | 17
+        // slots :   9    10     11     12      13      14      15      16      17
+
+        // ── Row 3 : 3 métiers suivants (slots 28, 30, 32) ────────
+
+        // Grille 3x2 : rangée 1 = slots 10,12,14 / rangée 2 = slots 28,30,32
+        int[][] jobLayout = {{10, 12, 14}, {28, 30, 32}};
+        int jobIndex = 0;
+        for (int[] row : jobLayout) {
+            for (int slot : row) {
+                if (jobIndex >= jobIds.size()) break;
+                String jobId = jobIds.get(jobIndex);
+                JobProgress prog = jobs.getOrDefault(jobId, new JobProgress(0, 1));
+
+                // Vitraux colorés adjacents (left + right de chaque carte)
+                Material glass = getJobGlassColor(jobId);
+                GuiItem colorGlass = ItemBuilder.from(glass).name(Component.text(" ")).asGuiItem();
+                if (slot > 9) gui.setItem(slot - 1, colorGlass);
+                gui.setItem(slot + 1, colorGlass);
+
+                addJobCard(gui, player, jobId, prog, slot);
+                jobIndex++;
+            }
         }
 
-        // Bouton retour menu
+        // ── Row 2 séparateur doré ─────────────────────────────────
+        for (int i = 18; i <= 26; i++) gui.setItem(i, golden);
+
+        // ── Row 4 séparateur ──────────────────────────────────────
+        for (int i = 36; i <= 44; i++) gui.setItem(i, golden);
+
+        // ── Row 5 : Retour menu ────────────────────────────────────
         gui.setItem(49, ItemBuilder.from(Material.ARROW)
                 .name(Component.text("§7← Retour au Menu"))
                 .asGuiItem(e -> {
@@ -793,40 +833,49 @@ public class JobModule implements CoreModule, Listener {
         gui.open(player);
     }
 
-    /** Carte d'un métier dans le menu principal — affiche niveau + mini barre XP. */
+    /** Carte d'un métier dans le menu principal — style Palladium. */
     private void addJobCard(Gui gui, Player player, String jobId, JobProgress prog, int slot) {
         Material icon = getJobIcon(jobId);
         String displayName = getJobDisplayName(jobId);
         String desc = jobsConfig.getString(jobId + ".description", "");
+        String color = getJobColor(jobId);
 
         int required = xpForLevel(prog.level + 1);
         String xpBar = makeXpBar(prog.xp, required);
+        int xpLeft = required - prog.xp;
         Set<String> claimed = claimedMilestones.getOrDefault(player.getUniqueId(), Collections.emptySet());
 
-        List<Component> lore = new ArrayList<>();
-        if (!desc.isEmpty()) {
-            lore.add(Component.text("§7" + desc));
-            lore.add(Component.text(""));
-        }
-        lore.add(Component.text("§eNiveau : §b" + prog.level + " §8/ §7" + maxLevel));
-        lore.add(Component.text(xpBar + " §7" + prog.xp + "§8/§7" + required));
-        int xpLeft = required - prog.xp;
-        lore.add(Component.text("§8Prochain niveau dans §7" + xpLeft + " XP"));
-        lore.add(Component.text(""));
-
-        // Mini paliers
+        // Prochain palier non encore atteint
         int[] milestones = {5, 10, 20, 30, 50};
-        StringBuilder mbar = new StringBuilder("§7Paliers : ");
+        String nextMilestone = "§a✦ Grand Maître atteint !";
         for (int m : milestones) {
-            boolean reached = claimed.contains(jobId + ":" + m);
-            mbar.append(reached ? "§a✦" : "§8○");
+            if (!claimed.contains(jobId + ":" + m)) {
+                nextMilestone = "§7Prochain palier : " + color + "Niv." + m;
+                break;
+            }
         }
-        lore.add(Component.text(mbar.toString()));
-        lore.add(Component.text(""));
+
+        List<Component> lore = new ArrayList<>();
+        if (!desc.isEmpty()) lore.add(Component.text("§8" + desc));
+        lore.add(Component.text("§8─────────────────────────"));
+        lore.add(Component.text("§7Niveau §f" + prog.level + " §8/ §7" + maxLevel));
+        lore.add(Component.text(xpBar));
+        lore.add(Component.text("§7" + prog.xp + " §8/ §7" + required + " XP §8(encore §7" + xpLeft + " XP§8)"));
+        lore.add(Component.text("§8─────────────────────────"));
+
+        // Paliers visuels
+        StringBuilder mbar = new StringBuilder("§8Paliers : ");
+        for (int m : milestones) {
+            boolean done = claimed.contains(jobId + ":" + m);
+            mbar.append(done ? "§a✦ " : "§8○ ");
+        }
+        lore.add(Component.text(mbar.toString().stripTrailing()));
+        lore.add(Component.text(nextMilestone));
+        lore.add(Component.text("§8─────────────────────────"));
         lore.add(Component.text("§e▶ Clic pour voir les détails"));
 
         gui.setItem(slot, ItemBuilder.from(icon)
-                .name(Component.text("§b§l" + displayName))
+                .name(Component.text(color + "§l" + displayName))
                 .lore(lore)
                 .asGuiItem(e -> openJobDetail(player, jobId)));
     }
@@ -841,86 +890,130 @@ public class JobModule implements CoreModule, Listener {
 
         String displayName = getJobDisplayName(jobId);
         String desc = jobsConfig.getString(jobId + ".description", "");
+        String color = getJobColor(jobId);
         int required = xpForLevel(prog.level + 1);
         int xpLeft = required - prog.xp;
         String xpBar = makeXpBar(prog.xp, required);
 
         Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §b" + displayName + " §8✦"))
+                .title(Component.text("§0✦ " + color + "§l" + displayName + " §0✦"))
                 .rows(6)
                 .disableAllInteractions()
                 .create();
 
-        GuiItem border = ItemBuilder.from(Material.BLACK_STAINED_GLASS_PANE)
+        // Fond noir
+        GuiItem black = ItemBuilder.from(Material.BLACK_STAINED_GLASS_PANE)
                 .name(Component.text(" ")).asGuiItem();
-        gui.getFiller().fill(border);
+        gui.getFiller().fill(black);
 
-        // ── Row 1 : Header avec niveau et XP ──
+        // Verre coloré du métier
+        Material jobGlass = getJobGlassColor(jobId);
+        GuiItem colorGlass = ItemBuilder.from(jobGlass).name(Component.text(" ")).asGuiItem();
+
+        // ── Row 0 : Header coloré ────────────────────────────────
+        for (int i = 0; i < 9; i++) {
+            if (i != 4) gui.setItem(i, colorGlass);
+        }
+
+        // Slot 4 : Info principale du métier
         List<Component> headerLore = new ArrayList<>();
-        headerLore.add(Component.text("§7" + desc));
-        headerLore.add(Component.text(""));
-        headerLore.add(Component.text("§eNiveau actuel : §b" + prog.level + " §8/ §7" + maxLevel));
-        headerLore.add(Component.text("§7XP : " + xpBar));
-        headerLore.add(Component.text("§7" + prog.xp + " §8/ §7" + required + " XP"));
-        headerLore.add(Component.text("§8Prochain niveau dans §7" + xpLeft + " XP"));
+        if (!desc.isEmpty()) headerLore.add(Component.text("§8" + desc));
+        headerLore.add(Component.text("§8─────────────────────────"));
+        headerLore.add(Component.text("§7Niveau §f" + prog.level + " §8/ §7" + maxLevel));
+        headerLore.add(Component.text(xpBar));
+        headerLore.add(Component.text("§7" + prog.xp + " §8/ §7" + required + " XP §8(encore §7" + xpLeft + "§8)"));
+        headerLore.add(Component.text("§8─────────────────────────"));
+        // XP total cumulée
+        int totalXpEarned = getTotalXpForLevel(prog.level) + prog.xp;
+        headerLore.add(Component.text("§7XP totale gagnée : §a" + totalXpEarned));
 
         gui.setItem(4, ItemBuilder.from(getJobIcon(jobId))
-                .name(Component.text("§b§l" + displayName))
+                .name(Component.text(color + "§l" + displayName))
                 .lore(headerLore)
                 .asGuiItem());
 
-        // ── Row 2 : Paliers et récompenses ──
-        int[] milestones = {5, 10, 20, 30, 50};
-        String[] mNames = {"Apprenti", "Compagnon", "Expert", "Maître", "Grand Maître"};
-        String[] mRewards = {"+200 ✦ + Pack Apprenti", "+500 ✦ + Pack Compagnon + 1 Claim",
-                "+1500 ✦ + Pack Expert + 2 Claims", "+3000 ✦ + Pack Maître + 3 Claims",
-                "+10000 ✦ + Pack Légendaire + 5 Claims"};
-        int[] mSlots = {10, 12, 14, 16, 18};
+        // ── Row 1 : Séparateur + titre paliers ──────────────────
+        gui.setItem(9,  colorGlass);
+        gui.setItem(17, colorGlass);
+        gui.setItem(13, ItemBuilder.from(Material.GOLD_BLOCK)
+                .name(Component.text("§6§lPaliers de Récompenses"))
+                .lore(
+                        Component.text("§7Atteins ces niveaux pour"),
+                        Component.text("§7débloquer des récompenses !"),
+                        Component.text(""),
+                        Component.text("§a✦ §7= Palier obtenu"),
+                        Component.text("§e⚡ §7= Niveau atteint"),
+                        Component.text("§8○ §7= Non atteint")
+                )
+                .asGuiItem());
+
+        // ── Row 2 : Les 5 paliers ────────────────────────────────
+        int[] milestones  = {5, 10, 20, 30, 50};
+        String[] mNames   = {"Apprenti", "Compagnon", "Expert", "Maître", "Grand Maître"};
+        String[] mColors  = {"§7", "§a", "§b", "§d", "§5"};
+        String[] mRewards = {"+200 ✦ + Pack Apprenti",
+                             "+500 ✦ + Pack Compagnon + §b1 Claim",
+                             "+1500 ✦ + Pack Expert + §b2 Claims",
+                             "+3000 ✦ + Pack Maître + §b3 Claims",
+                             "+10000 ✦ + Pack Légendaire + §b5 Claims"};
+        Material[] mIcons = {Material.IRON_INGOT, Material.GOLD_INGOT, Material.DIAMOND,
+                             Material.NETHERITE_INGOT, Material.NETHER_STAR};
+        int[] mSlots = {19, 21, 23, 25, 27};
 
         for (int i = 0; i < milestones.length; i++) {
             int m = milestones[i];
-            boolean reached = prog.level >= m;
             boolean claimedM = claimed.contains(jobId + ":" + m);
-            Material mIcon = claimedM ? Material.LIME_DYE : (reached ? Material.YELLOW_DYE : Material.GRAY_DYE);
+            boolean reached  = prog.level >= m;
+            String stateColor = claimedM ? "§a" : reached ? "§e" : "§8";
+            String stateLabel = claimedM ? "§a✦ OBTENU" : reached ? "§e⚡ Niveau atteint !" : "§8○ Non atteint";
 
             List<Component> mLore = new ArrayList<>();
-            mLore.add(Component.text("§7Palier Niv." + m + " — §e" + mNames[i]));
-            mLore.add(Component.text(""));
+            mLore.add(Component.text("§8─────────────────────────"));
+            mLore.add(Component.text("§7Palier : " + mColors[i] + "§l" + mNames[i] + " §8(Niv." + m + ")"));
             mLore.add(Component.text("§7Récompense : §6" + mRewards[i]));
-            mLore.add(Component.text(""));
-            if (claimedM) mLore.add(Component.text("§a✓ Déjà réclamé !"));
-            else if (reached) mLore.add(Component.text("§e⚡ Niveau atteint !"));
-            else {
-                int xpNeeded = xpForLevel(m + 1);
+            mLore.add(Component.text("§8─────────────────────────"));
+            if (!claimedM && !reached) {
                 int totalXpHave = getTotalXpForLevel(prog.level) + prog.xp;
                 int totalXpNeed = getTotalXpForLevel(m);
-                int remaining = Math.max(0, totalXpNeed - totalXpHave);
-                mLore.add(Component.text("§8✗ Manque encore §7~" + remaining + " XP"));
+                int remaining   = Math.max(0, totalXpNeed - totalXpHave);
+                mLore.add(Component.text("§8Encore §7~" + remaining + " XP §8à gagner"));
             }
+            mLore.add(Component.text(stateLabel));
 
-            gui.setItem(mSlots[i], ItemBuilder.from(mIcon)
-                    .name(Component.text((claimedM ? "§a" : reached ? "§e" : "§8") + "§lNiv." + m + " — " + mNames[i]))
+            gui.setItem(mSlots[i], ItemBuilder.from(claimedM ? Material.LIME_DYE : reached ? Material.YELLOW_DYE : mIcons[i])
+                    .name(Component.text(stateColor + "§l" + mNames[i] + " §8— Niv." + m))
                     .lore(mLore)
                     .asGuiItem());
         }
 
-        // ── Row 3-4 : Actions qui font gagner de l'XP ──
+        // ── Séparateur central ────────────────────────────────────
+        gui.setItem(18, colorGlass);
+        gui.setItem(26, colorGlass);
+
+        // ── Row 3 : Titre section actions ────────────────────────
         Map<String, JobReward> actions = jobActions.getOrDefault(jobId, Collections.emptyMap());
         List<Map.Entry<String, JobReward>> topActions = actions.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue().xp, a.getValue().xp))
-                .limit(9)
+                .limit(7)
                 .toList();
 
-        int[] actionSlots = {28, 29, 30, 31, 32, 33, 34, 35, 36};
-        gui.setItem(27, ItemBuilder.from(Material.EXPERIENCE_BOTTLE)
-                .name(Component.text("§a§lFaçons de gagner de l'XP"))
-                .lore(Component.text("§7Top " + Math.min(topActions.size(), 9) + " actions"))
+        gui.setItem(28, ItemBuilder.from(Material.EXPERIENCE_BOTTLE)
+                .name(Component.text("§a§lComment gagner de l'XP"))
+                .lore(
+                        Component.text("§7Actions récompensées pour"),
+                        Component.text(color + "§l" + displayName + "§7 (top " + topActions.size() + ")"),
+                        Component.text(""),
+                        Component.text("§8Les récompenses augmentent"),
+                        Component.text("§8avec le niveau.")
+                )
                 .asGuiItem());
 
+        // ── Row 3-4 : Actions XP (slots 29-35) ───────────────────
+        int[] actionSlots = {29, 30, 31, 32, 33, 34, 35};
         for (int i = 0; i < topActions.size() && i < actionSlots.length; i++) {
             Map.Entry<String, JobReward> entry = topActions.get(i);
             String actionKey = entry.getKey();
-            JobReward reward = entry.getValue();
+            JobReward reward  = entry.getValue();
 
             Material actionIcon;
             try { actionIcon = Material.valueOf(actionKey); }
@@ -928,15 +1021,21 @@ public class JobModule implements CoreModule, Listener {
 
             String formattedName = formatActionName(actionKey);
             gui.setItem(actionSlots[i], ItemBuilder.from(actionIcon)
-                    .name(Component.text("§f" + formattedName))
+                    .name(Component.text("§f§l" + formattedName))
                     .lore(
-                            Component.text("§7XP : §a+" + reward.xp),
-                            Component.text("§7Argent : §6+" + String.format("%.2f", reward.money) + " ✦")
+                            Component.text("§8─────────────────"),
+                            Component.text("§7XP     : §a+" + reward.xp + " XP"),
+                            Component.text("§7Argent : §6+" + String.format("%.2f", reward.money) + " ✦"),
+                            Component.text("§8─────────────────"),
+                            Component.text("§8Par action effectuée")
                     )
                     .asGuiItem());
         }
 
-        // ── Row 6 : Bouton retour ──
+        // ── Row 5 : Barre de fond + retour ────────────────────────
+        for (int i = 45; i <= 53; i++) {
+            if (i != 49) gui.setItem(i, colorGlass);
+        }
         gui.setItem(49, ItemBuilder.from(Material.ARROW)
                 .name(Component.text("§7← Retour aux Métiers"))
                 .asGuiItem(e -> openJobGui(player)));
@@ -966,12 +1065,38 @@ public class JobModule implements CoreModule, Listener {
 
     private String makeXpBar(int current, int max) {
         int barLength = 20;
-        int filled = Math.min((int) ((double) current / max * barLength), barLength);
+        int filled = max > 0 ? Math.min((int) ((double) current / max * barLength), barLength) : 0;
         StringBuilder bar = new StringBuilder("§a");
-        for (int i = 0; i < filled; i++) bar.append("|");
-        bar.append("§7");
-        for (int i = filled; i < barLength; i++) bar.append("|");
+        for (int i = 0; i < filled; i++) bar.append("█");
+        bar.append("§8");
+        for (int i = filled; i < barLength; i++) bar.append("█");
         return bar.toString();
+    }
+
+    /** Retourne la couleur associée à un métier (pour les panneaux de verre). */
+    private Material getJobGlassColor(String jobId) {
+        return switch (jobId) {
+            case "MINER"     -> Material.GRAY_STAINED_GLASS_PANE;
+            case "LUMBERJACK"-> Material.GREEN_STAINED_GLASS_PANE;
+            case "FARMER"    -> Material.YELLOW_STAINED_GLASS_PANE;
+            case "HUNTER"    -> Material.RED_STAINED_GLASS_PANE;
+            case "ALCHEMIST" -> Material.PURPLE_STAINED_GLASS_PANE;
+            case "COOK"      -> Material.ORANGE_STAINED_GLASS_PANE;
+            default          -> Material.LIGHT_BLUE_STAINED_GLASS_PANE;
+        };
+    }
+
+    /** Retourne la couleur texte associée à un métier. */
+    private String getJobColor(String jobId) {
+        return switch (jobId) {
+            case "MINER"     -> "§7";
+            case "LUMBERJACK"-> "§a";
+            case "FARMER"    -> "§e";
+            case "HUNTER"    -> "§c";
+            case "ALCHEMIST" -> "§5";
+            case "COOK"      -> "§6";
+            default          -> "§b";
+        };
     }
 
     private String getMilestoneReward(int level) {
