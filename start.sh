@@ -186,7 +186,7 @@ if [ -d "$FAITHLESS_DIR" ]; then
     cat >> "$PROPS.tmp" << RPEOF
 resource-pack=$RP_URL
 resource-pack-sha1=$FAITHLESS_SHA1
-resource-pack-prompt=\u00a7b\u2756 \u00a7fPack de textures officiel SurvivalCraft
+resource-pack-prompt={"text":"Télécharge le resource pack SurvivalCraft !","color":"aqua"}
 require-resource-pack=false
 RPEOF
     mv "$PROPS.tmp" "$PROPS"
