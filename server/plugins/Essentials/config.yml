@@ -1,0 +1,114 @@
+# ================================================================
+#  EssentialsX Config — SurvivalCraft
+#  EssentialsX sert UNIQUEMENT de backend Vault pour l'économie.
+#  Toutes les commandes joueurs sont gérées par SurvivalCore.
+#  Seules les commandes admin restent actives.
+# ================================================================
+
+ops-name-color: 'c'
+nickname-prefix: '~'
+max-nick-length: 15
+change-displayname: true
+change-tab-complete-name: false
+allow-silent-join-quit: false
+newbies:
+  announce-format: false
+
+# ── Commandes désactivées (gérées par SurvivalCore ou inutiles) ──
+disabled-commands:
+  # Navigation — remplacées par /spawn de SurvivalCore
+  - spawn
+  - setspawn
+  - home
+  - sethome
+  - delhome
+  - homes
+  - warp
+  - setwarp
+  - delwarp
+  - warps
+  # Téléportation joueur (pas sur un serveur survival RPG)
+  - tpa
+  - tpaccept
+  - tpdeny
+  - tpahere
+  - tpall
+  - tppos
+  - back
+  # Économie — remplacées par EconomyModule de SurvivalCore
+  - balance
+  - pay
+  - baltop
+  - eco
+  # Messagerie (pas implémenté, confus avec le chat)
+  - msg
+  - tell
+  - reply
+  - mail
+  # Cosmétique / inutile en survival RPG
+  - nick
+  - realname
+  - afk
+  - hat
+  - ptime
+  - pweather
+  - firework
+  # Items / inventaire (réservé aux admins via /give vanilla)
+  - kit
+  - kits
+  - repair
+  - workbench
+  - wb
+  - anvil
+  - grindstone
+  - enchant
+  - i
+  - item
+  - unlimited
+  - clearinventory
+  - ci
+  - invsee
+  # Monde / exploration
+  - bigtree
+  - tree
+  - break
+  - top
+  - depth
+  - getpos
+  - gps
+  - compass
+  # Utilitaires redondants avec vanilla/Paper
+  - list
+  - near
+  - seen
+  - whois
+  - rules
+  - motd
+  - info
+  - suicide
+  - burn
+  - ext
+  - lightning
+  - strike
+  - smite
+  - thunder
+  - weather
+  - time
+  - speed
+
+# ── Commandes ACTIVES (admin uniquement) ────────────────────────
+# Restent actives : /gamemode, /fly, /tp, /tphere, /teleport,
+# /heal, /feed, /god, /vanish, /give, /kick, /ban, /mute,
+# /jump, /sudo, /essentials, /ess, /ver, /plugins, /reload
+
+# ── Économie (backend Vault) ──────────────────────────────────────
+economy:
+  starting-balance: 0
+  currency-symbol: '✦'
+  currency-symbol-suffix: false
+  format: '##,###.## ✦'
+
+# ── Divers ────────────────────────────────────────────────────────
+update-check: false
+metrics: false
+essentials-economy-backup-player-data-file: false

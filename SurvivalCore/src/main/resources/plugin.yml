@@ -26,12 +26,12 @@ commands:
   commandes:
     description: Liste de toutes les commandes disponibles
     permission: survival.commandes
-    aliases: [aide, cmds]
+    aliases: [aide]
   # ── Économie & Commerce ──────────────────────────────────────
   balance:
     description: Voir son solde
     permission: survival.economy
-    aliases: [bal, money]
+    aliases: [bal]
   pay:
     description: Payer un autre joueur
     permission: survival.economy
@@ -43,7 +43,7 @@ commands:
     description: Hôtel des enchères — ventes et enchères joueurs
     usage: /ah [sell <prix> [durée_h]] | /ah collect
     permission: survival.auction
-    aliases: [hdv, auction]
+    aliases: [hdv]
   vendre:
     description: Mettre l'item en main sur le marché joueur
     permission: survival.market
@@ -56,7 +56,7 @@ commands:
     description: Choisir ou voir sa classe RPG
     permission: survival.class
   job:
-    description: Choisir ou voir son métier
+    description: Voir ses métiers et leur progression
     permission: survival.job
   quetes:
     description: Voir ses quêtes journalières

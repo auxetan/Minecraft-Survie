@@ -1,0 +1,22 @@
+# ================================================================
+#  commands.yml — Priorités des commandes SurvivalCraft
+#  Force les commandes SurvivalCore à primer sur EssentialsX.
+# ================================================================
+
+aliases:
+  # /spawn → SurvivalCore (pas Essentials)
+  spawn:
+    - survivalcore:spawn $1-
+  # /balance, /bal, /money → SurvivalCore
+  balance:
+    - survivalcore:balance $1-
+  bal:
+    - survivalcore:balance $1-
+  money:
+    - survivalcore:balance $1-
+  # /pay → SurvivalCore
+  pay:
+    - survivalcore:pay $1-
+  # /lobby → alias de spawn SurvivalCore
+  lobby:
+    - survivalcore:spawn
