@@ -1,0 +1,24 @@
+# InfernalMobs — Configuration SurvivalCraft
+# Chance qu'un mob devienne infernal
+infernalChance: 4
+# Nombre de pouvoirs par mob infernal (min-max)
+minPowers: 1
+maxPowers: 3
+# Santé bonus par pouvoir
+healthPerPower: 1.5
+# Drop XP multiplié
+xpMultiplier: 3
+# Drop items: true = drop des items enchantés aléatoires
+dropRandomEnchantedItems: true
+# Max niveau d'enchantement sur les drops
+maxDropEnchantLevel: 3
+# Worlds actifs
+enabledWorlds:
+  - world
+  - world_nether
+  - world_the_end
+# Mobs qui ne peuvent PAS devenir infernaux
+blacklistedMobs:
+  - ENDER_DRAGON
+  - WITHER
+  - WARDEN

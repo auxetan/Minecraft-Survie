@@ -1,0 +1,176 @@
+# ═══════════════════════════════════════════════
+#  SurvivalCraft — Mobs Élites
+#  Mobs améliorés qui apparaissent rarement
+# ═══════════════════════════════════════════════
+
+ChevalierSquelette:
+  Type: SKELETON
+  Display: '&c☠ Chevalier Squelette'
+  Health: 60
+  Damage: 8
+  Options:
+    MovementSpeed: 0.3
+    PreventOtherDrops: false
+    AlwaysShowName: true
+  Equipment:
+    - IRON_SWORD HAND
+    - IRON_HELMET HEAD
+    - IRON_CHESTPLATE CHEST
+    - IRON_LEGGINGS LEGS
+    - IRON_BOOTS FEET
+    - SHIELD OFF_HAND
+  Drops:
+    - IRON_INGOT 2-4 1
+    - EXPERIENCE_BOTTLE 1-3 0.5
+    - DIAMOND 1 0.1
+  Skills:
+    - skill{s=WarCry} @self ~onSpawn
+  Options.PreventRandomEquipment: true
+
+GolemDeCristal:
+  Type: IRON_GOLEM
+  Display: '&b✦ Golem de Cristal'
+  Health: 120
+  Damage: 15
+  Options:
+    MovementSpeed: 0.2
+    AlwaysShowName: true
+    PreventOtherDrops: true
+  Drops:
+    - DIAMOND 2-5 1
+    - AMETHYST_SHARD 4-8 1
+    - IRON_BLOCK 1-2 0.5
+    - EXPERIENCE_BOTTLE 3-5 1
+  Skills:
+    - skill{s=CrystalSlam} @NearestPlayer ~onTimer:100
+
+AraigneeVenimeuse:
+  Type: CAVE_SPIDER
+  Display: '&2☣ Araignée Venimeuse'
+  Health: 40
+  Damage: 6
+  Options:
+    MovementSpeed: 0.4
+    AlwaysShowName: true
+  Drops:
+    - STRING 4-8 1
+    - SPIDER_EYE 2-4 1
+    - FERMENTED_SPIDER_EYE 1-2 0.3
+    - EXPERIENCE_BOTTLE 1-2 1
+  Skills:
+    - potion{t=POISON;d=100;l=1} @target ~onAttack 0.3
+
+ZombieBerserker:
+  Type: ZOMBIE
+  Display: '&4⚔ Zombie Berserker'
+  Health: 80
+  Damage: 12
+  Options:
+    MovementSpeed: 0.35
+    AlwaysShowName: true
+    PreventOtherDrops: false
+  Equipment:
+    - DIAMOND_AXE HAND
+    - NETHERITE_HELMET HEAD
+  Drops:
+    - GOLDEN_APPLE 1 0.3
+    - DIAMOND 1-2 0.2
+    - ROTTEN_FLESH 4-8 1
+    - EXPERIENCE_BOTTLE 2-4 1
+
+CreeperInstable:
+  Type: CREEPER
+  Display: '&e⚡ Creeper Instable'
+  Health: 30
+  Options:
+    AlwaysShowName: true
+    ExplosionRadius: 6
+    PreventOtherDrops: true
+    FuseTicks: 15
+  Drops:
+    - GUNPOWDER 4-8 1
+    - TNT 1-2 0.3
+    - FIREWORK_ROCKET 2-4 0.5
+    - EXPERIENCE_BOTTLE 1-3 1
+
+SorcierEnderman:
+  Type: ENDERMAN
+  Display: '&5✧ Sorcier de l''End'
+  Health: 80
+  Damage: 10
+  Options:
+    AlwaysShowName: true
+    PreventTeleport: false
+    PreventOtherDrops: true
+  Drops:
+    - ENDER_PEARL 3-6 1
+    - ENDER_EYE 1-2 0.4
+    - EXPERIENCE_BOTTLE 3-5 1
+  Skills:
+    - teleport{spreadv=5;spreadh=5} @self ~onDamaged 0.4
+
+BlazardienInfernal:
+  Type: BLAZE
+  Display: '&6🔥 Blazardien Infernal'
+  Health: 60
+  Damage: 9
+  Options:
+    AlwaysShowName: true
+    PreventOtherDrops: true
+  Drops:
+    - BLAZE_ROD 3-6 1
+    - FIRE_CHARGE 2-4 0.5
+    - MAGMA_CREAM 2-4 0.5
+    - EXPERIENCE_BOTTLE 2-4 1
+  Skills:
+    - ignite{d=100} @NearestPlayer ~onTimer:60
+
+RodeurPhantome:
+  Type: PHANTOM
+  Display: '&7👻 Rôdeur Fantôme'
+  Health: 50
+  Damage: 8
+  Options:
+    AlwaysShowName: true
+    PreventOtherDrops: true
+  Drops:
+    - PHANTOM_MEMBRANE 3-6 1
+    - ELYTRA 1 0.02
+    - EXPERIENCE_BOTTLE 2-3 1
+
+GardeNoyé:
+  Type: DROWNED
+  Display: '&3🌊 Garde Noyé'
+  Health: 70
+  Damage: 10
+  Options:
+    AlwaysShowName: true
+    PreventOtherDrops: false
+  Equipment:
+    - TRIDENT HAND
+    - CHAINMAIL_HELMET HEAD
+    - CHAINMAIL_CHESTPLATE CHEST
+  Drops:
+    - TRIDENT 1 0.05
+    - HEART_OF_THE_SEA 1 0.03
+    - PRISMARINE_SHARD 2-6 0.5
+    - NAUTILUS_SHELL 1 0.2
+    - EXPERIENCE_BOTTLE 2-4 1
+
+SentinellePiglin:
+  Type: PIGLIN_BRUTE
+  Display: '&6👑 Sentinelle Piglin'
+  Health: 100
+  Damage: 14
+  Options:
+    AlwaysShowName: true
+    PreventOtherDrops: true
+  Equipment:
+    - GOLDEN_AXE{name=&6Hache Royale} HAND
+    - GOLDEN_HELMET HEAD
+    - GOLDEN_CHESTPLATE CHEST
+  Drops:
+    - GOLD_BLOCK 1-3 1
+    - GILDED_BLACKSTONE 2-4 0.5
+    - GOLDEN_APPLE 1-2 0.3
+    - EXPERIENCE_BOTTLE 4-6 1

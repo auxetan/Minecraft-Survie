@@ -1,0 +1,65 @@
+# ═══════════════════════════════════════════════
+#  Spawns aléatoires de mobs élites — 3% de chance
+# ═══════════════════════════════════════════════
+
+ChevalierSqueletteSpawn:
+  MobType: ChevalierSquelette
+  Worlds: world
+  Chance: 0.03
+  Priority: 1
+  Action: REPLACE
+  Conditions:
+    - night true
+
+GolemDeCristalSpawn:
+  MobType: GolemDeCristal
+  Worlds: world
+  Chance: 0.01
+  Priority: 1
+  Action: ADD
+  Conditions:
+    - below 40
+
+AraigneeVenimeuseSpawn:
+  MobType: AraigneeVenimeuse
+  Worlds: world
+  Chance: 0.05
+  Priority: 1
+  Action: REPLACE
+
+ZombieBerserkerSpawn:
+  MobType: ZombieBerserker
+  Worlds: world
+  Chance: 0.03
+  Priority: 1
+  Action: REPLACE
+  Conditions:
+    - night true
+
+CreeperInstableSpawn:
+  MobType: CreeperInstable
+  Worlds: world
+  Chance: 0.03
+  Priority: 1
+  Action: REPLACE
+
+BlazardienInfernalSpawn:
+  MobType: BlazardienInfernal
+  Worlds: world_nether
+  Chance: 0.05
+  Priority: 1
+  Action: REPLACE
+
+GardeNoyeSpawn:
+  MobType: GardeNoyé
+  Worlds: world
+  Chance: 0.04
+  Priority: 1
+  Action: REPLACE
+
+SentinellePiglinSpawn:
+  MobType: SentinellePiglin
+  Worlds: world_nether
+  Chance: 0.03
+  Priority: 1
+  Action: REPLACE

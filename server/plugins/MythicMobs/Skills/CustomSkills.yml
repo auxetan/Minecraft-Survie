@@ -1,0 +1,10 @@
+WarCry:
+  Skills:
+    - sound{s=entity.ravager.roar;v=2;p=0.8} @self
+    - effect:particles{p=angry_villager;a=20;s=0.5} @self
+
+CrystalSlam:
+  Skills:
+    - damage{a=10} @PlayersInRadius{r=4}
+    - effect:particles{p=block_crack;m=AMETHYST_BLOCK;a=30;s=1} @self
+    - sound{s=entity.iron_golem.attack;v=2;p=0.6} @self

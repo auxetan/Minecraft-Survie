@@ -52,6 +52,8 @@ public class ClaimModule implements CoreModule, Listener {
     private final Map<UUID, Integer> playerClaimCount = new ConcurrentHashMap<>();
     // Cache : UUID → dernier chunk visité (pour détecter entrée/sortie de claim)
     private final Map<UUID, String> lastChunkKey = new ConcurrentHashMap<>();
+    // Bonus claims accordés via les milestones de métier
+    private final Map<UUID, Integer> bonusClaims = new ConcurrentHashMap<>();
 
     @Override
     public void onEnable(SurvivalCore plugin) {
@@ -91,11 +93,20 @@ public class ClaimModule implements CoreModule, Listener {
         if (jobModule == null) return 0;
         int level = jobModule.getPlayerJobLevel(uuid);
 
-        if (level >= 50) return 11;
-        if (level >= 30) return 6;
-        if (level >= 20) return 3;
-        if (level >= 10) return 1;
-        return 0;
+        int base;
+        if (level >= 50) base = 11;
+        else if (level >= 30) base = 6;
+        else if (level >= 20) base = 3;
+        else if (level >= 10) base = 1;
+        else base = 0;
+        return base + bonusClaims.getOrDefault(uuid, 0);
+    }
+
+    /**
+     * Ajoute des slots de claim bonus (accordés via les milestones de métier).
+     */
+    public void addBonusClaims(UUID uuid, int amount) {
+        bonusClaims.merge(uuid, amount, Integer::sum);
     }
 
     public int getClaimCount(UUID uuid) {

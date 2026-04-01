@@ -1,7 +1,6 @@
 package com.survivalcore.modules;
 
 import com.survivalcore.SurvivalCore;
-import com.survivalcore.data.DatabaseManager;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
@@ -18,15 +17,14 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.BrewEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.FurnaceExtractEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
@@ -34,7 +32,6 @@ import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
-import java.io.InputStreamReader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,15 +39,17 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Module Jobs — 6 jobs (Mineur, Fermier, Chasseur, Alchimiste, Bûcheron, Cuisinier).
- * Inspiré de Jobs Reborn : listeners d'actions → XP job + argent async.
+ * Module Jobs — 6 métiers (Mineur, Bûcheron, Fermier, Chasseur, Alchimiste, Cuisinier).
+ * Tous les métiers sont actifs simultanément — pas de choix, pas de cooldown.
+ * Inspiré de Palladium : boss bar XP + GUI détaillé par métier.
  */
 public class JobModule implements CoreModule, Listener {
 
     private SurvivalCore plugin;
 
-    // Cache joueur → données de job
-    private final Map<UUID, JobData> playerJobs = new ConcurrentHashMap<>();
+    // Cache : UUID → { jobId → JobProgress }
+    // Tous les jobs sont trackés en parallèle pour chaque joueur
+    private final Map<UUID, Map<String, JobProgress>> allJobs = new ConcurrentHashMap<>();
 
     // Config jobs chargée depuis jobs.yml
     private YamlConfiguration jobsConfig;
@@ -64,12 +63,12 @@ public class JobModule implements CoreModule, Listener {
     // Cache des milestones déjà réclamés : UUID → Set de "JOB_ID:MILESTONE"
     private final Map<UUID, Set<String>> claimedMilestones = new ConcurrentHashMap<>();
 
-    // Compteurs debounce stats — flushés toutes les 60s au lieu de chaque event
+    // Compteurs debounce stats — flushés toutes les 60s
     private final Map<UUID, java.util.concurrent.atomic.AtomicInteger> pendingBlocksMined = new ConcurrentHashMap<>();
     private final Map<UUID, java.util.concurrent.atomic.AtomicInteger> pendingKillsMobs = new ConcurrentHashMap<>();
     private final Map<UUID, java.util.concurrent.atomic.AtomicInteger> pendingKillsPlayers = new ConcurrentHashMap<>();
 
-    // Boss bars XP job — une par joueur, masquée après 5s d'inactivité
+    // Boss bars XP — une par joueur, masquée après 4s d'inactivité
     private final Map<UUID, BossBar> xpBossBars = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> xpBarHideTasks = new ConcurrentHashMap<>();
 
@@ -81,39 +80,33 @@ public class JobModule implements CoreModule, Listener {
     @Override
     public void onEnable(SurvivalCore plugin) {
         this.plugin = plugin;
-
-        // Charger la config jobs.yml
         loadJobsConfig();
 
-        // Charger les données des joueurs connectés
         for (Player p : Bukkit.getOnlinePlayers()) {
-            loadPlayerJob(p.getUniqueId());
+            loadPlayerJobs(p.getUniqueId());
             loadClaimedMilestones(p.getUniqueId());
         }
 
         Bukkit.getPluginManager().registerEvents(this, plugin);
         plugin.getCommand("job").setExecutor(new JobCommand());
 
-        // Flush des compteurs de stats toutes les 60s (1200 ticks)
+        // Flush des compteurs de stats toutes les 60s
         Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::flushStatCounters, 1200L, 1200L);
 
-        plugin.getLogger().info("Job module enabled — " + jobActions.size() + " jobs chargés.");
+        plugin.getLogger().info("Job module enabled — " + jobActions.size() + " jobs chargés (mode multi-métiers).");
     }
 
     @Override
     public void onDisable() {
-        // Masquer toutes les boss bars XP
         for (Map.Entry<UUID, BossBar> entry : xpBossBars.entrySet()) {
             Player p = Bukkit.getPlayer(entry.getKey());
             if (p != null) p.hideBossBar(entry.getValue());
         }
         xpBossBars.clear();
         xpBarHideTasks.clear();
-        // Vider les compteurs de stats avant la fermeture
         flushStatCounters();
-        // Sauvegarder toutes les données
-        for (Map.Entry<UUID, JobData> entry : playerJobs.entrySet()) {
-            savePlayerJobSync(entry.getKey(), entry.getValue());
+        for (UUID uuid : allJobs.keySet()) {
+            savePlayerJobsSync(uuid);
         }
         plugin.getLogger().info("Job module disabled.");
     }
@@ -127,12 +120,9 @@ public class JobModule implements CoreModule, Listener {
 
     private void loadJobsConfig() {
         File jobsFile = new File(plugin.getDataFolder(), "data/jobs.yml");
-        if (!jobsFile.exists()) {
-            plugin.saveResource("data/jobs.yml", false);
-        }
+        if (!jobsFile.exists()) plugin.saveResource("data/jobs.yml", false);
         jobsConfig = YamlConfiguration.loadConfiguration(jobsFile);
 
-        // Leveling
         ConfigurationSection levelSec = jobsConfig.getConfigurationSection("leveling");
         if (levelSec != null) {
             baseXp = levelSec.getInt("base-xp", 100);
@@ -140,11 +130,9 @@ public class JobModule implements CoreModule, Listener {
             maxLevel = levelSec.getInt("max-level", 100);
         }
 
-        // Charger chaque job
         for (String jobId : getJobIds()) {
             ConfigurationSection actionsSec = jobsConfig.getConfigurationSection(jobId + ".actions");
             if (actionsSec == null) continue;
-
             Map<String, JobReward> actions = new HashMap<>();
             for (String key : actionsSec.getKeys(false)) {
                 int xp = actionsSec.getInt(key + ".xp", 0);
@@ -155,13 +143,11 @@ public class JobModule implements CoreModule, Listener {
         }
     }
 
-    /** Retourne la liste des IDs de job (exclut leveling et bonuses). */
+    /** Retourne tous les IDs de métier (exclut leveling et bonuses). */
     public List<String> getJobIds() {
         List<String> ids = new ArrayList<>();
         for (String key : jobsConfig.getKeys(false)) {
-            if (!key.equals("leveling") && !key.equals("bonuses")) {
-                ids.add(key);
-            }
+            if (!key.equals("leveling") && !key.equals("bonuses")) ids.add(key);
         }
         return ids;
     }
@@ -172,32 +158,44 @@ public class JobModule implements CoreModule, Listener {
 
     public Material getJobIcon(String jobId) {
         String iconName = jobsConfig.getString(jobId + ".icon", "STONE");
-        try {
-            return Material.valueOf(iconName);
-        } catch (IllegalArgumentException e) {
-            return Material.STONE;
-        }
+        try { return Material.valueOf(iconName); }
+        catch (IllegalArgumentException e) { return Material.STONE; }
     }
 
     // ─── API publique ───────────────────────────────────────────
 
-    public JobData getPlayerJob(UUID uuid) {
-        return playerJobs.get(uuid);
+    /** Retourne la progression d'un joueur dans un métier spécifique. */
+    public JobProgress getJobProgress(UUID uuid, String jobId) {
+        Map<String, JobProgress> jobs = allJobs.get(uuid);
+        if (jobs == null) return new JobProgress(0, 1);
+        return jobs.getOrDefault(jobId, new JobProgress(0, 1));
     }
 
-    public String getPlayerJobId(UUID uuid) {
-        JobData data = playerJobs.get(uuid);
-        return data != null ? data.jobId : "NONE";
+    /** Retourne le niveau du joueur dans un métier spécifique. */
+    public int getJobLevel(UUID uuid, String jobId) {
+        return getJobProgress(uuid, jobId).level;
     }
 
+    /** Compatibilité MenuModule — retourne le niveau du métier le plus avancé. */
     public int getPlayerJobLevel(UUID uuid) {
-        JobData data = playerJobs.get(uuid);
-        return data != null ? data.level : 1;
+        Map<String, JobProgress> jobs = allJobs.get(uuid);
+        if (jobs == null || jobs.isEmpty()) return 1;
+        return jobs.values().stream().mapToInt(p -> p.level).max().orElse(1);
     }
 
-    public int getPlayerJobXp(UUID uuid) {
-        JobData data = playerJobs.get(uuid);
-        return data != null ? data.xp : 0;
+    /** Compatibilité MenuModule — retourne l'ID du métier le plus avancé. */
+    public String getPlayerJobId(UUID uuid) {
+        Map<String, JobProgress> jobs = allJobs.get(uuid);
+        if (jobs == null || jobs.isEmpty()) return "NONE";
+        return jobs.entrySet().stream()
+                .max(Comparator.comparingInt(e -> e.getValue().level))
+                .map(Map.Entry::getKey)
+                .orElse("NONE");
+    }
+
+    /** Retourne tous les jobs du joueur. */
+    public Map<String, JobProgress> getAllJobs(UUID uuid) {
+        return allJobs.getOrDefault(uuid, new ConcurrentHashMap<>());
     }
 
     /** XP requise pour passer au niveau donné. */
@@ -205,106 +203,86 @@ public class JobModule implements CoreModule, Listener {
         return (int) (baseXp * Math.pow(level, exponent));
     }
 
-    /** Tente de changer le job d'un joueur. Retourne false si cooldown pas écoulé. */
-    public boolean setPlayerJob(UUID uuid, String jobId) {
-        JobData data = playerJobs.computeIfAbsent(uuid, k -> new JobData("NONE", 0, 1, 0));
-        long now = System.currentTimeMillis();
-        long threeDays = 3L * 24 * 60 * 60 * 1000;
-
-        // Vérifier cooldown (3 jours) — sauf si pas de job
-        if (!data.jobId.equals("NONE") && (now - data.lastChange) < threeDays) {
-            return false;
-        }
-
-        data.jobId = jobId;
-        data.xp = 0;
-        data.level = 1;
-        data.lastChange = now;
-        playerJobs.put(uuid, data);
-        savePlayerJobAsync(uuid, data);
-        return true;
-    }
-
     // ─── Reward Logic ───────────────────────────────────────────
 
     /**
-     * Donne les récompenses pour une action donnée (matériau ou entité).
-     * Appelé depuis les listeners.
+     * Récompense TOUS les métiers qui ont une action correspondant à actionKey.
+     * Plus de choix de métier — tous les métiers actifs sont récompensés.
      */
     private void rewardAction(Player player, String actionKey) {
-        UUID uuid = player.getUniqueId();
-        JobData data = playerJobs.get(uuid);
-        if (data == null || data.jobId.equals("NONE")) return;
-
-        Map<String, JobReward> actions = jobActions.get(data.jobId);
-        if (actions == null) return;
-
-        JobReward reward = actions.get(actionKey);
-        if (reward == null) return;
-
-        // Bonus de niveau 10+ : +5% argent
-        double moneyMultiplier = 1.0;
-        if (data.level >= 10) moneyMultiplier += 0.05;
-        // Bonus compétence Collecteur (+20% argent job)
-        SkillModule skillModule = plugin.getModule(SkillModule.class);
-        if (skillModule != null && skillModule.hasSkill(uuid, "collector")) {
-            moneyMultiplier += 0.20;
-        }
-
-        double money = reward.money * moneyMultiplier;
-        int xp = reward.xp;
-
-        // Donner l'argent via EconomyModule
-        EconomyModule eco = plugin.getModule(EconomyModule.class);
-        if (eco != null && money > 0) {
-            eco.depositFromEarning(uuid, money);
-        }
-
-        // Ajouter l'XP job
-        data.xp += xp;
-        checkLevelUp(player, data);
-
-        // Afficher la boss bar XP
-        showXpBossBar(player, data, xp);
-
-        // Sauvegarder async
-        savePlayerJobAsync(uuid, data);
-
-        // XP générale (pour SkillModule plus tard)
-        addGeneralXp(uuid, xp);
+        rewardActionMulti(player, actionKey, 1);
     }
 
-    private void checkLevelUp(Player player, JobData data) {
-        if (data.level >= maxLevel) return;
+    private void rewardActionMulti(Player player, String actionKey, int count) {
+        UUID uuid = player.getUniqueId();
+        Map<String, JobProgress> jobs = allJobs.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>());
 
-        int required = xpForLevel(data.level + 1);
-        while (data.xp >= required && data.level < maxLevel) {
-            data.xp -= required;
-            data.level++;
-            required = xpForLevel(data.level + 1);
+        EconomyModule eco = plugin.getModule(EconomyModule.class);
+        SkillModule skillModule = plugin.getModule(SkillModule.class);
+        boolean hasCollector = skillModule != null && skillModule.hasSkill(uuid, "collector");
 
-            // Notification de level up
-            player.sendMessage("§6§l✦ §eJob Level Up ! §f" + getJobDisplayName(data.jobId) + " §7→ Niveau §b" + data.level);
-            player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
+        boolean anyRewarded = false;
+        for (Map.Entry<String, Map<String, JobReward>> jobEntry : jobActions.entrySet()) {
+            String jobId = jobEntry.getKey();
+            JobReward reward = jobEntry.getValue().get(actionKey);
+            if (reward == null) continue;
 
-            // Vérifier les paliers de récompenses
-            checkMilestone(player, data);
+            JobProgress prog = jobs.computeIfAbsent(jobId, k -> new JobProgress(0, 1));
+
+            // Multiplicateurs
+            double moneyMult = 1.0;
+            if (prog.level >= 10) moneyMult += 0.05;
+            if (hasCollector) moneyMult += 0.20;
+
+            double money = reward.money * moneyMult * count;
+            int xp = reward.xp * count;
+
+            // Argent
+            if (eco != null && money > 0) eco.depositFromEarning(uuid, money);
+
+            // XP job
+            prog.xp += xp;
+            checkLevelUp(player, jobId, prog);
+
+            // Boss bar pour CE métier
+            showXpBossBar(player, jobId, prog, xp);
+
+            anyRewarded = true;
+        }
+
+        if (anyRewarded) {
+            savePlayerJobsAsync(uuid);
+            addGeneralXp(uuid, 1); // 1 XP général par action
+        }
+    }
+
+    private void checkLevelUp(Player player, String jobId, JobProgress prog) {
+        if (prog.level >= maxLevel) return;
+        int required = xpForLevel(prog.level + 1);
+        while (prog.xp >= required && prog.level < maxLevel) {
+            prog.xp -= required;
+            prog.level++;
+            required = xpForLevel(prog.level + 1);
+
+            player.sendMessage("§6§l✦ §eJob Level Up ! §f" + getJobDisplayName(jobId) + " §7→ Niveau §b" + prog.level);
+            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
+            checkMilestone(player, jobId, prog);
         }
     }
 
     // ─── Boss Bar XP ────────────────────────────────────────────
 
-    private void showXpBossBar(Player player, JobData data, int xpGained) {
+    private void showXpBossBar(Player player, String jobId, JobProgress prog, int xpGained) {
         UUID uuid = player.getUniqueId();
-        int required = xpForLevel(data.level + 1);
-        float progress = Math.min(1.0f, Math.max(0f, (float) data.xp / required));
-        String jobName = getJobDisplayName(data.jobId);
+        int required = xpForLevel(prog.level + 1);
+        float progress = Math.min(1.0f, Math.max(0f, (float) prog.xp / required));
+        String jobName = getJobDisplayName(jobId);
 
         Component title = Component.text("✦ ", NamedTextColor.GOLD)
                 .append(Component.text(jobName, NamedTextColor.YELLOW, TextDecoration.BOLD))
-                .append(Component.text(" Niv." + data.level, NamedTextColor.WHITE))
+                .append(Component.text(" Niv." + prog.level, NamedTextColor.WHITE))
                 .append(Component.text(" — ", NamedTextColor.DARK_GRAY))
-                .append(Component.text(data.xp + "/" + required + " XP", NamedTextColor.AQUA))
+                .append(Component.text(prog.xp + "/" + required + " XP", NamedTextColor.AQUA))
                 .append(Component.text(" (+" + xpGained + ")", NamedTextColor.GREEN));
 
         BossBar bar = xpBossBars.get(uuid);
@@ -317,13 +295,9 @@ public class JobModule implements CoreModule, Listener {
             bar.progress(progress);
         }
 
-        // Annuler le précédent task de masquage
         Integer oldTask = xpBarHideTasks.remove(uuid);
-        if (oldTask != null) {
-            Bukkit.getScheduler().cancelTask(oldTask);
-        }
+        if (oldTask != null) Bukkit.getScheduler().cancelTask(oldTask);
 
-        // Masquer après 4 secondes d'inactivité
         BossBar finalBar = bar;
         int taskId = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             player.hideBossBar(finalBar);
@@ -333,35 +307,23 @@ public class JobModule implements CoreModule, Listener {
         xpBarHideTasks.put(uuid, taskId);
     }
 
-    // ─── Paliers de Récompenses ────────────────────────────────
+    // ─── Paliers de Récompenses ─────────────────────────────────
 
-    /**
-     * Système de paliers : aux niveaux clés, le joueur reçoit des récompenses spéciales.
-     * Niv 5  : bonus argent + items basiques du métier
-     * Niv 10 : +5% argent permanent + items intermédiaires + déblocage 1 claim
-     * Niv 20 : items rares du métier + titre + déblocage 2 claims
-     * Niv 30 : items légendaires + déblocage 3 claims
-     * Niv 50 : Maître — stuff unique + déblocage 5 claims
-     */
-    private void checkMilestone(Player player, JobData data) {
+    private void checkMilestone(Player player, String jobId, JobProgress prog) {
         UUID uuid = player.getUniqueId();
-        String jobName = getJobDisplayName(data.jobId);
-
-        // Vérifier si ce palier a déjà été réclamé
-        String cacheKey = data.jobId + ":" + data.level;
+        String cacheKey = jobId + ":" + prog.level;
         Set<String> claimed = claimedMilestones.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet());
         if (claimed.contains(cacheKey)) return;
 
-        switch (data.level) {
+        String jobName = getJobDisplayName(jobId);
+
+        switch (prog.level) {
             case 5 -> {
-                // Palier Apprenti
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
                 if (eco != null) eco.depositFromEarning(uuid, 200);
-                giveJobItems(player, data.jobId, 5);
-
+                giveJobItems(player, jobId, 5);
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
                 if (ann != null) ann.announceJobMilestone(player.getName(), jobName, 5, "Apprenti");
-
                 player.sendMessage("§8§m                                        ");
                 player.sendMessage("§6§l✦ PALIER APPRENTI DÉBLOQUÉ ! §f" + jobName + " Niv.5");
                 player.sendMessage("§7Récompense : §6+200 ✦ §7+ §aPack Apprenti");
@@ -370,11 +332,11 @@ public class JobModule implements CoreModule, Listener {
             case 10 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
                 if (eco != null) eco.depositFromEarning(uuid, 500);
-                giveJobItems(player, data.jobId, 10);
-
+                giveJobItems(player, jobId, 10);
+                ClaimModule claim = plugin.getModule(ClaimModule.class);
+                if (claim != null) claim.addBonusClaims(uuid, 1);
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
                 if (ann != null) ann.announceJobMilestone(player.getName(), jobName, 10, "Compagnon");
-
                 player.sendMessage("§8§m                                        ");
                 player.sendMessage("§e§l✦ PALIER COMPAGNON DÉBLOQUÉ ! §f" + jobName + " Niv.10");
                 player.sendMessage("§7Récompense : §6+500 ✦ §7+ §aPack Compagnon §7+ §b1 Claim");
@@ -384,11 +346,11 @@ public class JobModule implements CoreModule, Listener {
             case 20 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
                 if (eco != null) eco.depositFromEarning(uuid, 1500);
-                giveJobItems(player, data.jobId, 20);
-
+                giveJobItems(player, jobId, 20);
+                ClaimModule claim = plugin.getModule(ClaimModule.class);
+                if (claim != null) claim.addBonusClaims(uuid, 2);
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
                 if (ann != null) ann.announceJobMilestone(player.getName(), jobName, 20, "Expert");
-
                 player.sendMessage("§8§m                                        ");
                 player.sendMessage("§b§l✦ PALIER EXPERT DÉBLOQUÉ ! §f" + jobName + " Niv.20");
                 player.sendMessage("§7Récompense : §6+1500 ✦ §7+ §aPack Expert §7+ §b2 Claims");
@@ -397,11 +359,11 @@ public class JobModule implements CoreModule, Listener {
             case 30 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
                 if (eco != null) eco.depositFromEarning(uuid, 3000);
-                giveJobItems(player, data.jobId, 30);
-
+                giveJobItems(player, jobId, 30);
+                ClaimModule claim = plugin.getModule(ClaimModule.class);
+                if (claim != null) claim.addBonusClaims(uuid, 3);
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
                 if (ann != null) ann.announceJobMilestone(player.getName(), jobName, 30, "Maître");
-
                 player.sendMessage("§8§m                                        ");
                 player.sendMessage("§d§l✦ PALIER MAÎTRE DÉBLOQUÉ ! §f" + jobName + " Niv.30");
                 player.sendMessage("§7Récompense : §6+3000 ✦ §7+ §aPack Maître §7+ §b3 Claims");
@@ -410,23 +372,21 @@ public class JobModule implements CoreModule, Listener {
             case 50 -> {
                 EconomyModule eco = plugin.getModule(EconomyModule.class);
                 if (eco != null) eco.depositFromEarning(uuid, 10000);
-                giveJobItems(player, data.jobId, 50);
-
+                giveJobItems(player, jobId, 50);
+                ClaimModule claim = plugin.getModule(ClaimModule.class);
+                if (claim != null) claim.addBonusClaims(uuid, 5);
                 AnnouncerModule ann = plugin.getModule(AnnouncerModule.class);
                 if (ann != null) ann.announceJobMilestone(player.getName(), jobName, 50, "Grand Maître");
-
                 player.sendMessage("§8§m                                        ");
                 player.sendMessage("§5§l✦✦ GRAND MAÎTRE ! ✦✦ §f" + jobName + " Niv.50");
                 player.sendMessage("§7Récompense : §6+10000 ✦ §7+ §aPack Légendaire §7+ §b5 Claims");
                 player.sendMessage("§8§m                                        ");
             }
-            default -> { return; } // Pas un palier connu — ne pas enregistrer
+            default -> { return; }
         }
 
-        // Marquer le palier comme réclamé en cache et en DB
         claimed.add(cacheKey);
-        final int milestoneLevel = data.level;
-        final String jobId = data.jobId;
+        final int milestoneLevel = prog.level;
         plugin.getDatabaseManager().runAsync(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(
                     "INSERT OR IGNORE INTO job_milestones (uuid, job_id, milestone) VALUES (?, ?, ?)")) {
@@ -440,10 +400,8 @@ public class JobModule implements CoreModule, Listener {
         });
     }
 
-    /** Donne des items spécifiques au métier selon le palier. */
     private void giveJobItems(Player player, String jobId, int milestone) {
         List<ItemStack> items = new java.util.ArrayList<>();
-
         switch (jobId) {
             case "MINER" -> {
                 if (milestone >= 5) items.add(enchantedItem(Material.IRON_PICKAXE, "§6Pioche d'Apprenti Mineur", 5));
@@ -491,7 +449,6 @@ public class JobModule implements CoreModule, Listener {
                 if (milestone >= 50) items.add(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 8));
             }
         }
-
         for (ItemStack item : items) {
             Map<Integer, ItemStack> overflow = player.getInventory().addItem(item);
             for (ItemStack leftover : overflow.values()) {
@@ -500,48 +457,31 @@ public class JobModule implements CoreModule, Listener {
         }
     }
 
-    /** Crée un item enchanté custom avec nom et enchantements basés sur le palier. */
     private ItemStack enchantedItem(Material material, String displayName, int milestone) {
         ItemStack item = new ItemStack(material);
         org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
         meta.displayName(net.kyori.adventure.text.Component.text(displayName));
-
         List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
         lore.add(net.kyori.adventure.text.Component.text("§7Récompense de palier Niv." + milestone));
         lore.add(net.kyori.adventure.text.Component.text("§8Lié au métier"));
         meta.lore(lore);
-
-        // Enchantements progressifs selon le palier et le type d'item
-        String matName = material.name();
-        boolean isSword = matName.contains("SWORD");
-        boolean isBow = matName.equals("BOW");
-
+        boolean isSword = material.name().contains("SWORD");
+        boolean isBow = material.name().equals("BOW");
         if (milestone >= 5) {
-            if (isSword) {
-                meta.addEnchant(org.bukkit.enchantments.Enchantment.SHARPNESS, Math.min(milestone / 5, 5), true);
-            } else if (isBow) {
-                meta.addEnchant(org.bukkit.enchantments.Enchantment.POWER, Math.min(milestone / 5, 5), true);
-            } else {
-                meta.addEnchant(org.bukkit.enchantments.Enchantment.EFFICIENCY, Math.min(milestone / 5, 5), true);
-            }
+            if (isSword) meta.addEnchant(org.bukkit.enchantments.Enchantment.SHARPNESS, Math.min(milestone / 5, 5), true);
+            else if (isBow) meta.addEnchant(org.bukkit.enchantments.Enchantment.POWER, Math.min(milestone / 5, 5), true);
+            else meta.addEnchant(org.bukkit.enchantments.Enchantment.EFFICIENCY, Math.min(milestone / 5, 5), true);
             meta.addEnchant(org.bukkit.enchantments.Enchantment.UNBREAKING, Math.min(milestone / 10 + 1, 3), true);
         }
         if (milestone >= 20) {
-            if (isSword) {
-                meta.addEnchant(org.bukkit.enchantments.Enchantment.LOOTING, Math.min(milestone / 15, 3), true);
-            } else if (!isBow) {
-                meta.addEnchant(org.bukkit.enchantments.Enchantment.FORTUNE, Math.min(milestone / 15, 3), true);
-            }
+            if (isSword) meta.addEnchant(org.bukkit.enchantments.Enchantment.LOOTING, Math.min(milestone / 15, 3), true);
+            else if (!isBow) meta.addEnchant(org.bukkit.enchantments.Enchantment.FORTUNE, Math.min(milestone / 15, 3), true);
         }
-        if (milestone >= 50) {
-            meta.addEnchant(org.bukkit.enchantments.Enchantment.MENDING, 1, true);
-        }
-
+        if (milestone >= 50) meta.addEnchant(org.bukkit.enchantments.Enchantment.MENDING, 1, true);
         item.setItemMeta(meta);
         return item;
     }
 
-    /** Ajoute de l'XP générale au joueur (pour l'arbre de compétences). */
     private void addGeneralXp(UUID uuid, int amount) {
         plugin.getDatabaseManager().runAsync(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(
@@ -558,35 +498,22 @@ public class JobModule implements CoreModule, Listener {
         });
     }
 
-    // ─── Listeners (inspiré Jobs Reborn) ────────────────────────
+    // ─── Listeners ──────────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
-        String jobId = getPlayerJobId(player.getUniqueId());
+        String mat = event.getBlock().getType().name();
 
-        // Incrémenter blocks_mined pour TOUS les joueurs (débounce — flush toutes les 60s)
+        // Stats globales (débounce)
         pendingBlocksMined.computeIfAbsent(player.getUniqueId(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
 
-        // Mineur : minerais et pierres
-        if (jobId.equals("MINER")) {
-            String mat = event.getBlock().getType().name();
+        // Fermier : uniquement cultures matures
+        if (isMatureCrop(event.getBlock())) {
             rewardAction(player, mat);
-        }
-
-        // Bûcheron : bois
-        if (jobId.equals("LUMBERJACK")) {
-            String mat = event.getBlock().getType().name();
+        } else {
+            // Mineur + Bûcheron : autres blocs
             rewardAction(player, mat);
-        }
-
-        // Fermier : récoltes (vérifier si c'est une culture mature)
-        if (jobId.equals("FARMER")) {
-            Block block = event.getBlock();
-            Material type = block.getType();
-            if (isMatureCrop(block)) {
-                rewardAction(player, type.name());
-            }
         }
     }
 
@@ -594,33 +521,23 @@ public class JobModule implements CoreModule, Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         if (event.getEntity().getKiller() == null) return;
         Player player = event.getEntity().getKiller();
-        String jobId = getPlayerJobId(player.getUniqueId());
 
-        // Incrémenter kills_players si la victime est un joueur (débounce)
         if (event.getEntity() instanceof Player) {
             pendingKillsPlayers.computeIfAbsent(player.getUniqueId(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
             return;
         }
 
-        // Chasseur : mobs
-        if (jobId.equals("HUNTER")) {
-            String entityName = event.getEntityType().name();
-            rewardAction(player, entityName);
-        }
-
-        // Incrémenter kills_mobs pour tous les joueurs (débounce)
+        String entityName = event.getEntityType().name();
+        rewardAction(player, entityName);
         pendingKillsMobs.computeIfAbsent(player.getUniqueId(), k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
     }
 
-    /** Track quel joueur utilise quel brewing stand (pour ALCHEMIST). */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (event.getView().getTopInventory().getType() != InventoryType.BREWING) return;
         org.bukkit.Location loc = event.getView().getTopInventory().getLocation();
-        if (loc != null) {
-            brewingPlayers.put(loc.getBlock().getLocation(), player.getUniqueId());
-        }
+        if (loc != null) brewingPlayers.put(loc.getBlock().getLocation(), player.getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -628,14 +545,8 @@ public class JobModule implements CoreModule, Listener {
         org.bukkit.Location loc = event.getBlock().getLocation();
         UUID uuid = brewingPlayers.get(loc);
         if (uuid == null) return;
-
         Player player = Bukkit.getPlayer(uuid);
         if (player == null) return;
-
-        String jobId = getPlayerJobId(uuid);
-        if (!jobId.equals("ALCHEMIST")) return;
-
-        // Récompenser pour chaque potion dans les slots 0-2 du brewing stand
         BrewerInventory contents = event.getContents();
         for (int i = 0; i < 3; i++) {
             ItemStack potion = contents.getItem(i);
@@ -648,67 +559,47 @@ public class JobModule implements CoreModule, Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onFurnaceExtract(FurnaceExtractEvent event) {
         Player player = event.getPlayer();
-        String jobId = getPlayerJobId(player.getUniqueId());
-
-        // Cuisinier : extraction du fourneau/fumoir
-        if (jobId.equals("COOK")) {
-            String mat = event.getItemType().name();
-            for (int i = 0; i < event.getItemAmount(); i++) {
-                rewardAction(player, mat);
-            }
-        }
+        String mat = event.getItemType().name();
+        rewardActionMulti(player, mat, event.getItemAmount());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraft(CraftItemEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        String jobId = getPlayerJobId(player.getUniqueId());
-
-        // Cuisinier : craft de nourriture
-        if (jobId.equals("COOK")) {
-            String mat = event.getRecipe().getResult().getType().name();
-            rewardAction(player, mat);
-        }
+        String mat = event.getRecipe().getResult().getType().name();
+        rewardAction(player, mat);
     }
 
-    /** Vérifie si un crop est à maturité. */
     private boolean isMatureCrop(Block block) {
         if (block.getBlockData() instanceof org.bukkit.block.data.Ageable ageable) {
             return ageable.getAge() == ageable.getMaximumAge();
         }
-        // Melon, pumpkin, cactus, sugar_cane ne sont pas Ageable
         Material t = block.getType();
         return t == Material.MELON || t == Material.PUMPKIN || t == Material.SUGAR_CANE
                 || t == Material.CACTUS || t == Material.BAMBOO || t == Material.COCOA;
     }
 
-    // ─── Listeners join/quit ────────────────────────────────────
-
     @EventHandler
     public void onPlayerJoin(org.bukkit.event.player.PlayerJoinEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        loadPlayerJob(uuid);
+        loadPlayerJobs(uuid);
         loadClaimedMilestones(uuid);
     }
 
     @EventHandler
     public void onPlayerQuit(org.bukkit.event.player.PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        // Nettoyer la boss bar XP
         BossBar bar = xpBossBars.remove(uuid);
         if (bar != null) event.getPlayer().hideBossBar(bar);
         Integer hideTask = xpBarHideTasks.remove(uuid);
         if (hideTask != null) Bukkit.getScheduler().cancelTask(hideTask);
-        // Vider les compteurs du joueur avant qu'il parte
         flushPlayerCounters(uuid);
-        JobData data = playerJobs.remove(uuid);
-        if (data != null) {
-            savePlayerJobAsync(uuid, data);
-        }
+        savePlayerJobsAsync(uuid);
+        allJobs.remove(uuid);
         claimedMilestones.remove(uuid);
     }
 
-    // ─── Flush des compteurs de stats (débounce) ─────────────────
+    // ─── Flush stats ─────────────────────────────────────────────
 
     private void flushStatCounters() {
         flushCounter(pendingBlocksMined, "blocks_mined");
@@ -734,7 +625,6 @@ public class JobModule implements CoreModule, Listener {
         }
     }
 
-    /** Flush uniquement les compteurs d'un joueur spécifique (à sa déconnexion). */
     private void flushPlayerCounters(UUID uuid) {
         flushSingleCounter(uuid, pendingBlocksMined, "blocks_mined");
         flushSingleCounter(uuid, pendingKillsMobs, "kills_mobs");
@@ -758,27 +648,41 @@ public class JobModule implements CoreModule, Listener {
         });
     }
 
-    // ─── Persistance SQLite async ───────────────────────────────
+    // ─── Persistance SQLite ─────────────────────────────────────
 
-    private void loadPlayerJob(UUID uuid) {
+    private void loadPlayerJobs(UUID uuid) {
         plugin.getDatabaseManager().executeAsync(conn -> {
+            Map<String, JobProgress> jobs = new ConcurrentHashMap<>();
+
+            // Charger depuis player_jobs (multi-métiers)
             try (PreparedStatement ps = conn.prepareStatement(
-                    "SELECT job, job_xp, job_level, last_job_change FROM players WHERE uuid = ?")) {
+                    "SELECT job_id, xp, level FROM player_jobs WHERE uuid = ?")) {
                 ps.setString(1, uuid.toString());
                 ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    return new JobData(
-                            rs.getString("job"),
-                            rs.getInt("job_xp"),
-                            rs.getInt("job_level"),
-                            rs.getLong("last_job_change")
-                    );
+                while (rs.next()) {
+                    jobs.put(rs.getString("job_id"), new JobProgress(rs.getInt("xp"), rs.getInt("level")));
                 }
             } catch (SQLException e) {
-                plugin.getLogger().warning("Erreur chargement job: " + e.getMessage());
+                plugin.getLogger().warning("Erreur chargement player_jobs: " + e.getMessage());
             }
-            return new JobData("NONE", 0, 1, 0);
-        }).thenAccept(data -> playerJobs.put(uuid, data));
+
+            // Migration : si vide, lire l'ancien job unique depuis players
+            if (jobs.isEmpty()) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT job, job_xp, job_level FROM players WHERE uuid = ?")) {
+                    ps.setString(1, uuid.toString());
+                    ResultSet rs = ps.executeQuery();
+                    if (rs.next()) {
+                        String oldJob = rs.getString("job");
+                        if (oldJob != null && !oldJob.equals("NONE") && !oldJob.isBlank()) {
+                            jobs.put(oldJob, new JobProgress(rs.getInt("job_xp"), rs.getInt("job_level")));
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            return jobs;
+        }).thenAccept(jobs -> allJobs.put(uuid, jobs));
     }
 
     private void loadClaimedMilestones(UUID uuid) {
@@ -798,183 +702,275 @@ public class JobModule implements CoreModule, Listener {
         }).thenAccept(keys -> claimedMilestones.put(uuid, keys));
     }
 
-    private void savePlayerJobAsync(UUID uuid, JobData data) {
+    private void savePlayerJobsAsync(UUID uuid) {
+        Map<String, JobProgress> jobs = allJobs.get(uuid);
+        if (jobs == null) return;
+        Map<String, JobProgress> snapshot = new HashMap<>(jobs);
         plugin.getDatabaseManager().runAsync(conn -> {
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE players SET job = ?, job_xp = ?, job_level = ?, last_job_change = ? WHERE uuid = ?")) {
-                ps.setString(1, data.jobId);
-                ps.setInt(2, data.xp);
-                ps.setInt(3, data.level);
-                ps.setLong(4, data.lastChange);
-                ps.setString(5, uuid.toString());
-                ps.executeUpdate();
-            } catch (SQLException e) {
-                plugin.getLogger().warning("Erreur sauvegarde job: " + e.getMessage());
+            for (Map.Entry<String, JobProgress> entry : snapshot.entrySet()) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "INSERT OR REPLACE INTO player_jobs (uuid, job_id, xp, level) VALUES (?, ?, ?, ?)")) {
+                    ps.setString(1, uuid.toString());
+                    ps.setString(2, entry.getKey());
+                    ps.setInt(3, entry.getValue().xp);
+                    ps.setInt(4, entry.getValue().level);
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    plugin.getLogger().warning("Erreur sauvegarde player_jobs: " + e.getMessage());
+                }
             }
         });
     }
 
-    private void savePlayerJobSync(UUID uuid, JobData data) {
+    private void savePlayerJobsSync(UUID uuid) {
+        Map<String, JobProgress> jobs = allJobs.get(uuid);
+        if (jobs == null) return;
         try {
             var conn = plugin.getDatabaseManager().getConnection();
-            if (conn != null && !conn.isClosed()) {
+            if (conn == null || conn.isClosed()) return;
+            for (Map.Entry<String, JobProgress> entry : jobs.entrySet()) {
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "UPDATE players SET job = ?, job_xp = ?, job_level = ?, last_job_change = ? WHERE uuid = ?")) {
-                    ps.setString(1, data.jobId);
-                    ps.setInt(2, data.xp);
-                    ps.setInt(3, data.level);
-                    ps.setLong(4, data.lastChange);
-                    ps.setString(5, uuid.toString());
+                        "INSERT OR REPLACE INTO player_jobs (uuid, job_id, xp, level) VALUES (?, ?, ?, ?)")) {
+                    ps.setString(1, uuid.toString());
+                    ps.setString(2, entry.getKey());
+                    ps.setInt(3, entry.getValue().xp);
+                    ps.setInt(4, entry.getValue().level);
                     ps.executeUpdate();
                 }
             }
-        } catch (SQLException e) {
-            plugin.getLogger().warning("Erreur sauvegarde sync job: " + e.getMessage());
+        } catch (Exception e) {
+            plugin.getLogger().warning("Erreur sauvegarde sync player_jobs: " + e.getMessage());
         }
     }
 
-    // ─── Job Selector GUI ───────────────────────────────────────
+    // ─── GUI — Liste des métiers (style Palladium) ───────────────
 
     public void openJobGui(Player player) {
         UUID uuid = player.getUniqueId();
-        JobData playerData = playerJobs.getOrDefault(uuid, new JobData("NONE", 0, 1, 0));
+        Map<String, JobProgress> jobs = allJobs.getOrDefault(uuid, new ConcurrentHashMap<>());
+        List<String> jobIds = getJobIds();
 
         Gui gui = Gui.gui()
-                .title(Component.text("§8✦ §eChoisir ton Job §8✦"))
+                .title(Component.text("§8✦ §eMes Métiers §8✦"))
                 .rows(6)
                 .disableAllInteractions()
                 .create();
 
-        // Black glass border (all slots)
+        // Fond noir
         GuiItem border = ItemBuilder.from(Material.BLACK_STAINED_GLASS_PANE)
                 .name(Component.text(" ")).asGuiItem();
         gui.getFiller().fill(border);
 
-        // Row 1 Slot 4: Current job info
-        String currentJobDisplay;
-        String levelInfo;
-        String xpInfo;
-        if (playerData.jobId.equals("NONE")) {
-            currentJobDisplay = "§7Aucun job";
-            levelInfo = "§8Pas encore de job";
-            xpInfo = makeXpBar(0, 100);
-        } else {
-            currentJobDisplay = "§6" + getJobDisplayName(playerData.jobId);
-            levelInfo = "§eNiveau §b" + playerData.level + " §8/ " + maxLevel;
-            int required = xpForLevel(playerData.level + 1);
-            xpInfo = makeXpBar(playerData.xp, required) + " §7" + playerData.xp + "/" + required;
-        }
-
+        // Header — titre
         gui.setItem(4, ItemBuilder.from(Material.NETHER_STAR)
-                .name(Component.text("§f§lTon Job"))
+                .name(Component.text("§f§lMes Métiers"))
                 .lore(
-                        Component.text(currentJobDisplay),
-                        Component.text(levelInfo),
+                        Component.text("§7Tous les métiers sont actifs"),
+                        Component.text("§7simultanément. Gagne de l'XP"),
+                        Component.text("§7en jouant normalement !"),
                         Component.text(""),
-                        Component.text(xpInfo)
+                        Component.text("§8Clic sur un métier → détails")
                 )
                 .asGuiItem());
 
-        // Row 2-3: Job cards at slots 10, 12, 14, 16 (row 2) and 28, 30 (row 3)
+        // Cards des métiers — slots : 10,12,14,16 (row2) + 28,30 (row4) pour 6 jobs max
         int[] jobSlots = {10, 12, 14, 16, 28, 30};
-        List<String> jobIds = getJobIds();
-
         for (int i = 0; i < jobIds.size() && i < jobSlots.length; i++) {
             String jobId = jobIds.get(i);
-            addJobCard(gui, player, uuid, playerData, jobId, jobSlots[i]);
+            JobProgress prog = jobs.getOrDefault(jobId, new JobProgress(0, 1));
+            addJobCard(gui, player, jobId, prog, jobSlots[i]);
         }
 
-        // Row 5: Milestone info at slot 40
-        List<Component> milestoneLore = new ArrayList<>();
-        milestoneLore.add(Component.text("§eParaliers débloqués :"));
-        milestoneLore.add(Component.text(""));
+        // Bouton retour menu
+        gui.setItem(49, ItemBuilder.from(Material.ARROW)
+                .name(Component.text("§7← Retour au Menu"))
+                .asGuiItem(e -> {
+                    MenuModule menu = plugin.getModule(MenuModule.class);
+                    if (menu != null) menu.openMainMenu(player);
+                }));
 
-        int[] milestones = {5, 10, 20, 30, 50};
-        for (int m : milestones) {
-            boolean reached = playerData.level >= m;
-            String marker = reached ? "§a✓" : "§8✗";
-            milestoneLore.add(Component.text(marker + " §eNiv. " + m + " §7(§b" + getMilestoneReward(m) + "§7)"));
-        }
-
-        gui.setItem(40, ItemBuilder.from(Material.BOOK)
-                .name(Component.text("§d§lPaliers"))
-                .lore(milestoneLore)
-                .asGuiItem());
-
-        // Play sound
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1.0f, 1.0f);
         gui.open(player);
     }
 
-    private void addJobCard(Gui gui, Player player, UUID uuid, JobData playerData, String jobId, int slot) {
+    /** Carte d'un métier dans le menu principal — affiche niveau + mini barre XP. */
+    private void addJobCard(Gui gui, Player player, String jobId, JobProgress prog, int slot) {
         Material icon = getJobIcon(jobId);
         String displayName = getJobDisplayName(jobId);
+        String desc = jobsConfig.getString(jobId + ".description", "");
+
+        int required = xpForLevel(prog.level + 1);
+        String xpBar = makeXpBar(prog.xp, required);
+        Set<String> claimed = claimedMilestones.getOrDefault(player.getUniqueId(), Collections.emptySet());
 
         List<Component> lore = new ArrayList<>();
-
-        // Job description
-        String desc = jobsConfig.getString(jobId + ".description", "");
         if (!desc.isEmpty()) {
             lore.add(Component.text("§7" + desc));
             lore.add(Component.text(""));
         }
+        lore.add(Component.text("§eNiveau : §b" + prog.level + " §8/ §7" + maxLevel));
+        lore.add(Component.text(xpBar + " §7" + prog.xp + "§8/§7" + required));
+        int xpLeft = required - prog.xp;
+        lore.add(Component.text("§8Prochain niveau dans §7" + xpLeft + " XP"));
+        lore.add(Component.text(""));
 
-        // If this is the current job, show level and XP
-        if (playerData.jobId.equals(jobId)) {
-            lore.add(Component.text("§a✓ Ton job actuel"));
-            lore.add(Component.text("§eNiveau : §b" + playerData.level));
-            int required = xpForLevel(playerData.level + 1);
-            lore.add(Component.text(makeXpBar(playerData.xp, required)));
-            lore.add(Component.text("§7" + playerData.xp + "/" + required + " XP"));
-        } else {
-            lore.add(Component.text("§a▶ Clic pour choisir"));
+        // Mini paliers
+        int[] milestones = {5, 10, 20, 30, 50};
+        StringBuilder mbar = new StringBuilder("§7Paliers : ");
+        for (int m : milestones) {
+            boolean reached = claimed.contains(jobId + ":" + m);
+            mbar.append(reached ? "§a✦" : "§8○");
+        }
+        lore.add(Component.text(mbar.toString()));
+        lore.add(Component.text(""));
+        lore.add(Component.text("§e▶ Clic pour voir les détails"));
+
+        gui.setItem(slot, ItemBuilder.from(icon)
+                .name(Component.text("§b§l" + displayName))
+                .lore(lore)
+                .asGuiItem(e -> openJobDetail(player, jobId)));
+    }
+
+    // ─── GUI — Détail d'un métier (style Palladium) ─────────────
+
+    public void openJobDetail(Player player, String jobId) {
+        UUID uuid = player.getUniqueId();
+        Map<String, JobProgress> jobs = allJobs.getOrDefault(uuid, new ConcurrentHashMap<>());
+        JobProgress prog = jobs.getOrDefault(jobId, new JobProgress(0, 1));
+        Set<String> claimed = claimedMilestones.getOrDefault(uuid, Collections.emptySet());
+
+        String displayName = getJobDisplayName(jobId);
+        String desc = jobsConfig.getString(jobId + ".description", "");
+        int required = xpForLevel(prog.level + 1);
+        int xpLeft = required - prog.xp;
+        String xpBar = makeXpBar(prog.xp, required);
+
+        Gui gui = Gui.gui()
+                .title(Component.text("§8✦ §b" + displayName + " §8✦"))
+                .rows(6)
+                .disableAllInteractions()
+                .create();
+
+        GuiItem border = ItemBuilder.from(Material.BLACK_STAINED_GLASS_PANE)
+                .name(Component.text(" ")).asGuiItem();
+        gui.getFiller().fill(border);
+
+        // ── Row 1 : Header avec niveau et XP ──
+        List<Component> headerLore = new ArrayList<>();
+        headerLore.add(Component.text("§7" + desc));
+        headerLore.add(Component.text(""));
+        headerLore.add(Component.text("§eNiveau actuel : §b" + prog.level + " §8/ §7" + maxLevel));
+        headerLore.add(Component.text("§7XP : " + xpBar));
+        headerLore.add(Component.text("§7" + prog.xp + " §8/ §7" + required + " XP"));
+        headerLore.add(Component.text("§8Prochain niveau dans §7" + xpLeft + " XP"));
+
+        gui.setItem(4, ItemBuilder.from(getJobIcon(jobId))
+                .name(Component.text("§b§l" + displayName))
+                .lore(headerLore)
+                .asGuiItem());
+
+        // ── Row 2 : Paliers et récompenses ──
+        int[] milestones = {5, 10, 20, 30, 50};
+        String[] mNames = {"Apprenti", "Compagnon", "Expert", "Maître", "Grand Maître"};
+        String[] mRewards = {"+200 ✦ + Pack Apprenti", "+500 ✦ + Pack Compagnon + 1 Claim",
+                "+1500 ✦ + Pack Expert + 2 Claims", "+3000 ✦ + Pack Maître + 3 Claims",
+                "+10000 ✦ + Pack Légendaire + 5 Claims"};
+        int[] mSlots = {10, 12, 14, 16, 18};
+
+        for (int i = 0; i < milestones.length; i++) {
+            int m = milestones[i];
+            boolean reached = prog.level >= m;
+            boolean claimedM = claimed.contains(jobId + ":" + m);
+            Material mIcon = claimedM ? Material.LIME_DYE : (reached ? Material.YELLOW_DYE : Material.GRAY_DYE);
+
+            List<Component> mLore = new ArrayList<>();
+            mLore.add(Component.text("§7Palier Niv." + m + " — §e" + mNames[i]));
+            mLore.add(Component.text(""));
+            mLore.add(Component.text("§7Récompense : §6" + mRewards[i]));
+            mLore.add(Component.text(""));
+            if (claimedM) mLore.add(Component.text("§a✓ Déjà réclamé !"));
+            else if (reached) mLore.add(Component.text("§e⚡ Niveau atteint !"));
+            else {
+                int xpNeeded = xpForLevel(m + 1);
+                int totalXpHave = getTotalXpForLevel(prog.level) + prog.xp;
+                int totalXpNeed = getTotalXpForLevel(m);
+                int remaining = Math.max(0, totalXpNeed - totalXpHave);
+                mLore.add(Component.text("§8✗ Manque encore §7~" + remaining + " XP"));
+            }
+
+            gui.setItem(mSlots[i], ItemBuilder.from(mIcon)
+                    .name(Component.text((claimedM ? "§a" : reached ? "§e" : "§8") + "§lNiv." + m + " — " + mNames[i]))
+                    .lore(mLore)
+                    .asGuiItem());
         }
 
-        Material cardMaterial = playerData.jobId.equals(jobId) ? Material.LIME_STAINED_GLASS_PANE : icon;
+        // ── Row 3-4 : Actions qui font gagner de l'XP ──
+        Map<String, JobReward> actions = jobActions.getOrDefault(jobId, Collections.emptyMap());
+        List<Map.Entry<String, JobReward>> topActions = actions.entrySet().stream()
+                .sorted((a, b) -> Integer.compare(b.getValue().xp, a.getValue().xp))
+                .limit(9)
+                .toList();
 
-        gui.setItem(slot, ItemBuilder.from(cardMaterial)
-                .name(Component.text((playerData.jobId.equals(jobId) ? "§a" : "§f") + "§l" + displayName))
-                .lore(lore)
-                .asGuiItem(event -> {
-                    if (playerData.jobId.equals(jobId)) {
-                        player.sendMessage("§7Tu as déjà ce job !");
-                        return;
-                    }
+        int[] actionSlots = {28, 29, 30, 31, 32, 33, 34, 35, 36};
+        gui.setItem(27, ItemBuilder.from(Material.EXPERIENCE_BOTTLE)
+                .name(Component.text("§a§lFaçons de gagner de l'XP"))
+                .lore(Component.text("§7Top " + Math.min(topActions.size(), 9) + " actions"))
+                .asGuiItem());
 
-                    long now = System.currentTimeMillis();
-                    long threeDays = 3L * 24 * 60 * 60 * 1000;
-                    if (!playerData.jobId.equals("NONE") && (now - playerData.lastChange) < threeDays) {
-                        long remaining = (threeDays - (now - playerData.lastChange)) / 1000 / 60 / 60 / 24;
-                        player.sendMessage("§cTu dois attendre §e" + remaining + " jours §cavant de changer de job.");
-                        return;
-                    }
+        for (int i = 0; i < topActions.size() && i < actionSlots.length; i++) {
+            Map.Entry<String, JobReward> entry = topActions.get(i);
+            String actionKey = entry.getKey();
+            JobReward reward = entry.getValue();
 
-                    // Select the job
-                    if (setPlayerJob(uuid, jobId)) {
-                        player.sendMessage("§a✦ Tu es maintenant §f" + displayName + " §a!");
-                        player.closeInventory();
-                        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
-                    } else {
-                        player.sendMessage("§cErreur lors de la sélection du job.");
-                    }
-                }));
+            Material actionIcon;
+            try { actionIcon = Material.valueOf(actionKey); }
+            catch (Exception ex) { actionIcon = Material.PAPER; }
+
+            String formattedName = formatActionName(actionKey);
+            gui.setItem(actionSlots[i], ItemBuilder.from(actionIcon)
+                    .name(Component.text("§f" + formattedName))
+                    .lore(
+                            Component.text("§7XP : §a+" + reward.xp),
+                            Component.text("§7Argent : §6+" + String.format("%.2f", reward.money) + " ✦")
+                    )
+                    .asGuiItem());
+        }
+
+        // ── Row 6 : Bouton retour ──
+        gui.setItem(49, ItemBuilder.from(Material.ARROW)
+                .name(Component.text("§7← Retour aux Métiers"))
+                .asGuiItem(e -> openJobGui(player)));
+
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1.0f, 1.2f);
+        gui.open(player);
+    }
+
+    /** XP totale cumulée pour atteindre un niveau donné depuis le niveau 1. */
+    private int getTotalXpForLevel(int targetLevel) {
+        int total = 0;
+        for (int lvl = 1; lvl < targetLevel; lvl++) {
+            total += xpForLevel(lvl + 1);
+        }
+        return total;
+    }
+
+    private String formatActionName(String key) {
+        String[] parts = key.toLowerCase().split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (!sb.isEmpty()) sb.append(" ");
+            sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return sb.toString();
     }
 
     private String makeXpBar(int current, int max) {
         int barLength = 20;
-        int filled = (int) ((double) current / max * barLength);
-        filled = Math.min(filled, barLength);
-        int empty = barLength - filled;
-
-        StringBuilder bar = new StringBuilder();
-        bar.append("§a");
-        for (int i = 0; i < filled; i++) {
-            bar.append("|");
-        }
+        int filled = Math.min((int) ((double) current / max * barLength), barLength);
+        StringBuilder bar = new StringBuilder("§a");
+        for (int i = 0; i < filled; i++) bar.append("|");
         bar.append("§7");
-        for (int i = 0; i < empty; i++) {
-            bar.append("|");
-        }
+        for (int i = filled; i < barLength; i++) bar.append("|");
         return bar.toString();
     }
 
@@ -998,72 +994,34 @@ public class JobModule implements CoreModule, Listener {
                 sender.sendMessage("§cCommande joueur uniquement.");
                 return true;
             }
-
-            UUID uuid = player.getUniqueId();
-
-            if (args.length == 0) {
-                // Open job GUI
-                openJobGui(player);
-                return true;
-            }
-
-            if (args[0].equalsIgnoreCase("choose") && args.length >= 2) {
+            if (args.length > 0 && args[0].equalsIgnoreCase("info") && args.length >= 2) {
+                // /job info <jobId> → ouvre le détail
                 String jobId = args[1].toUpperCase();
                 if (!getJobIds().contains(jobId)) {
-                    player.sendMessage("§cJob invalide. Disponibles : §f" + String.join(", ", getJobIds()));
+                    player.sendMessage("§cJob inconnu. Jobs disponibles : §f" + String.join(", ", getJobIds()));
                     return true;
                 }
-                if (!setPlayerJob(uuid, jobId)) {
-                    long remaining = getRemainingCooldown(uuid);
-                    player.sendMessage("§cTu dois attendre encore §e" + formatTime(remaining) + " §cavant de changer de job.");
-                    return true;
-                }
-                player.sendMessage("§a✦ Tu es maintenant §f" + getJobDisplayName(jobId) + " §a!");
+                openJobDetail(player, jobId);
                 return true;
             }
-
-            if (args[0].equalsIgnoreCase("list")) {
-                player.sendMessage("§6§l✦ §eJobs disponibles :");
-                for (String id : getJobIds()) {
-                    player.sendMessage("  §7- §f" + getJobDisplayName(id) + " §8(§7" + id + "§8)");
-                }
-                return true;
-            }
-
-            player.sendMessage("§cUsage : /job [choose <job>|list]");
+            openJobGui(player);
             return true;
         }
     }
 
-    private long getRemainingCooldown(UUID uuid) {
-        JobData data = playerJobs.get(uuid);
-        if (data == null) return 0;
-        long threeDays = 3L * 24 * 60 * 60 * 1000;
-        long elapsed = System.currentTimeMillis() - data.lastChange;
-        return Math.max(0, threeDays - elapsed);
-    }
-
-    private String formatTime(long millis) {
-        long hours = millis / (1000 * 60 * 60);
-        long minutes = (millis / (1000 * 60)) % 60;
-        return hours + "h " + minutes + "min";
-    }
-
     // ─── Data classes ───────────────────────────────────────────
 
-    public static class JobData {
-        public String jobId;
+    /** Progression d'un joueur dans un métier (XP + niveau). */
+    public static class JobProgress {
         public int xp;
         public int level;
-        public long lastChange;
 
-        public JobData(String jobId, int xp, int level, long lastChange) {
-            this.jobId = jobId;
+        public JobProgress(int xp, int level) {
             this.xp = xp;
-            this.level = level;
-            this.lastChange = lastChange;
+            this.level = Math.max(1, level);
         }
     }
 
+    /** Récompense d'une action (XP + argent). */
     public record JobReward(int xp, double money) {}
 }

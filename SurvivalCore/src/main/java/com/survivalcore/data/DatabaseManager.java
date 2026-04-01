@@ -197,6 +197,16 @@ public class DatabaseManager {
                 """);
 
             stmt.execute("""
+                CREATE TABLE IF NOT EXISTS player_jobs (
+                    uuid TEXT NOT NULL,
+                    job_id TEXT NOT NULL,
+                    xp INTEGER DEFAULT 0,
+                    level INTEGER DEFAULT 1,
+                    PRIMARY KEY (uuid, job_id)
+                );
+                """);
+
+            stmt.execute("""
                 CREATE TABLE IF NOT EXISTS common_chest (
                     id INTEGER PRIMARY KEY DEFAULT 1,
                     contents TEXT
