@@ -16,11 +16,16 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.event.inventory.InventoryAction;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -357,6 +362,77 @@ public class ArcModule implements CoreModule, Listener {
         Player player = event.getPlayer();
         String mat = event.getBlock().getType().name();
         progressArc(player.getUniqueId(), "GATHER", mat, 1);
+    }
+
+    // Items obtenus hors des blocs : pickup au sol
+    private static final Set<String> PICKUP_TRACKED_ITEMS = Set.of(
+            "ECHO_SHARD", "HEART_OF_THE_SEA", "DRAGON_EGG", "NETHER_STAR",
+            "WITHER_SKELETON_SKULL", "TOTEM_OF_UNDYING", "PRISMARINE_SHARD",
+            "ENDER_PEARL"
+    );
+    // Items obtenus par craft
+    private static final Set<String> CRAFT_TRACKED_ITEMS = Set.of(
+            "BLAZE_POWDER", "MUSHROOM_STEW"
+    );
+
+    /** Ramassage d'items au sol (ENDER_PEARL, NETHER_STAR, etc.) */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onItemPickup(EntityPickupItemEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        UUID uuid = player.getUniqueId();
+        ArcProgress prog = playerArcs.get(uuid);
+        if (prog == null || prog.completed) return;
+        ArcDefinition def = arcDefinitions.get(prog.arcId);
+        if (def == null) return;
+        ArcStep step = def.steps.stream().filter(s -> s.stepNumber == prog.currentStep).findFirst().orElse(null);
+        if (step == null || !step.type.equals("GATHER")) return;
+
+        String matName = event.getItem().getItemStack().getType().name();
+        if (!matName.equals(step.target)) return;
+        if (!PICKUP_TRACKED_ITEMS.contains(matName)) return;
+
+        progressArc(uuid, "GATHER", matName, event.getItem().getItemStack().getAmount());
+    }
+
+    /** Prise depuis un coffre/structure vers l'inventaire joueur (shift-clic). */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onInventoryMove(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (event.getAction() != InventoryAction.MOVE_TO_OTHER_INVENTORY) return;
+        if (event.getClickedInventory() == null) return;
+        if (event.getClickedInventory().equals(player.getInventory())) return;
+
+        UUID uuid = player.getUniqueId();
+        ArcProgress prog = playerArcs.get(uuid);
+        if (prog == null || prog.completed) return;
+        ArcDefinition def = arcDefinitions.get(prog.arcId);
+        if (def == null) return;
+        ArcStep step = def.steps.stream().filter(s -> s.stepNumber == prog.currentStep).findFirst().orElse(null);
+        if (step == null || !step.type.equals("GATHER")) return;
+
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR) return;
+        String matName = clicked.getType().name();
+        if (!matName.equals(step.target)) return;
+        if (!PICKUP_TRACKED_ITEMS.contains(matName)) return;
+
+        progressArc(uuid, "GATHER", matName, clicked.getAmount());
+    }
+
+    /** Craft d'items : BLAZE_POWDER, MUSHROOM_STEW, etc. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onCraft(CraftItemEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        String matName = event.getRecipe().getResult().getType().name();
+        if (!CRAFT_TRACKED_ITEMS.contains(matName)) return;
+        UUID uuid = player.getUniqueId();
+        ArcProgress prog = playerArcs.get(uuid);
+        if (prog == null || prog.completed) return;
+        ArcDefinition def = arcDefinitions.get(prog.arcId);
+        if (def == null) return;
+        ArcStep step = def.steps.stream().filter(s -> s.stepNumber == prog.currentStep).findFirst().orElse(null);
+        if (step == null || !step.type.equals("GATHER") || !step.target.equals(matName)) return;
+        progressArc(uuid, "GATHER", matName, event.getRecipe().getResult().getAmount());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

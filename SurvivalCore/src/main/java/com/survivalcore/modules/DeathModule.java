@@ -109,8 +109,10 @@ public class DeathModule implements CoreModule, Listener {
         // 2. Créer le sac de mort
         ItemStack deathBag = createDeathBag(uuid, player.getName(), contents, armor);
 
-        // 3. Drop le sac à la position de mort
-        deathLoc.getWorld().dropItemNaturally(deathLoc, deathBag);
+        // 3. Drop le sac à la position de mort — immortel (Paper API)
+        org.bukkit.entity.Item droppedBag = deathLoc.getWorld().dropItemNaturally(deathLoc, deathBag);
+        droppedBag.setPickupDelay(40); // 2s avant auto-pickup (protège contre ramassage immédiat)
+        droppedBag.setUnlimitedLifetime(true); // Ne disparaît jamais (stocké en NBT, survit aux redémarrages)
 
         // 4. Beacon de particules
         startDeathBeacon(uuid, deathLoc);
