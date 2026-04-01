@@ -13,55 +13,6 @@
         "\uF0F9": -9,  "\uF0FA":-10,  "\uF0FB":-16,  "\uF0FC":-32,
         "\uF0FD":-64,  "\uF0FE":-128, "\uF0FF":-256
       }
-    },
-    {
-      "type": "bitmap",
-      "file": "survivalcraft:gui/market_bg.png",
-      "ascent": 22,
-      "height": 256,
-      "chars": ["\uEA00"]
-    },
-    {
-      "type": "bitmap",
-      "file": "survivalcraft:gui/menu_bg.png",
-      "ascent": 22,
-      "height": 256,
-      "chars": ["\uEA01"]
-    },
-    {
-      "type": "bitmap",
-      "file": "survivalcraft:gui/quest_bg.png",
-      "ascent": 22,
-      "height": 256,
-      "chars": ["\uEA02"]
-    },
-    {
-      "type": "bitmap",
-      "file": "survivalcraft:gui/shop_bg.png",
-      "ascent": 22,
-      "height": 256,
-      "chars": ["\uEA03"]
-    },
-    {
-      "type": "bitmap",
-      "file": "survivalcraft:gui/auction_bg.png",
-      "ascent": 22,
-      "height": 256,
-      "chars": ["\uEA04"]
-    },
-    {
-      "type": "bitmap",
-      "file": "survivalcraft:gui/skills_bg.png",
-      "ascent": 22,
-      "height": 256,
-      "chars": ["\uEA05"]
-    },
-    {
-      "type": "bitmap",
-      "file": "survivalcraft:gui/leaderboard_bg.png",
-      "ascent": 22,
-      "height": 256,
-      "chars": ["\uEA06"]
     }
   ]
 }

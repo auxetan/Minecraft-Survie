@@ -1,8 +1,7 @@
 # ================================================================
-#  Biome : Wasteland Glacé
-#  Replaces Frozen Peaks — glace bleue, tempêtes, structures de glace.
-#  Ambiance : hostile, minimaliste, magnifique la nuit.
-#  Loot : blue ice, packed ice, minerais de fer rare dans la glace.
+#  Biome : Wasteland Glacé — étend FROZEN_PEAKS
+#  Glace bleue, tempêtes, structures de glace.
+#  (structures et mobs custom retirés)
 # ================================================================
 
 id: "FROZEN_WASTELAND"
@@ -16,68 +15,15 @@ color:
   foliage: "#6aa0c0"
 
 sounds:
-  additions:
-  - "weather.rain"
   mood:
     sound: "block.powder_snow.step"
     delay: 6000
     range: 16
 
-flora:
-  density: 0.02
-  items:
-  - id: "PACKED_ICE"
-    weight: 40
-    threshold: 0.6
-  - id: "POWDER_SNOW"
-    weight: 60
-    threshold: 0.3
-
 surface:
   top: "BLUE_ICE"
   filler: "PACKED_ICE"
   ocean: "ICE"
-
-ores:
-  BLUE_ICE:
-    size: 12
-    count: 15
-    minY: 60
-    maxY: 200
-  PACKED_ICE:
-    size: 16
-    count: 20
-    minY: 50
-    maxY: 200
-  IRON_ORE:
-    size: 6
-    count: 8
-    minY: 20
-    maxY: 100
-  DIAMOND_ORE:
-    size: 3
-    count: 2
-    minY: -16
-    maxY: 16
-
-structures:
-- id: "ICE_SPIRE"
-  chance: 0.15
-- id: "FROZEN_RUINS"
-  chance: 0.08
-- id: "ICE_CAVE_ENTRANCE"
-  chance: 0.10
-
-mobs:
-  spawns:
-  - id: "SqueletteOmbre"
-    weight: 15
-    minGroup: 1
-    maxGroup: 3
-  vanilla:
-  - STRAY
-  - POLAR_BEAR
-  - RABBIT
 
 terrain:
   noiseMultiplier: 2.0

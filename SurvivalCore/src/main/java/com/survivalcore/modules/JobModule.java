@@ -4,7 +4,6 @@ import com.survivalcore.SurvivalCore;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
-import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -68,9 +67,7 @@ public class JobModule implements CoreModule, Listener {
     private final Map<UUID, java.util.concurrent.atomic.AtomicInteger> pendingKillsMobs = new ConcurrentHashMap<>();
     private final Map<UUID, java.util.concurrent.atomic.AtomicInteger> pendingKillsPlayers = new ConcurrentHashMap<>();
 
-    // Boss bars XP — une par joueur, masquée après 4s d'inactivité
-    private final Map<UUID, BossBar> xpBossBars = new ConcurrentHashMap<>();
-    private final Map<UUID, Integer> xpBarHideTasks = new ConcurrentHashMap<>();
+    // (Boss bars supprimées — XP affiché via action bar, moins intrusif)
 
     // Leveling config
     private int baseXp = 100;
@@ -98,12 +95,6 @@ public class JobModule implements CoreModule, Listener {
 
     @Override
     public void onDisable() {
-        for (Map.Entry<UUID, BossBar> entry : xpBossBars.entrySet()) {
-            Player p = Bukkit.getPlayer(entry.getKey());
-            if (p != null) p.hideBossBar(entry.getValue());
-        }
-        xpBossBars.clear();
-        xpBarHideTasks.clear();
         flushStatCounters();
         for (UUID uuid : allJobs.keySet()) {
             savePlayerJobsSync(uuid);
@@ -244,8 +235,8 @@ public class JobModule implements CoreModule, Listener {
             prog.xp += xp;
             checkLevelUp(player, jobId, prog);
 
-            // Boss bar pour CE métier
-            showXpBossBar(player, jobId, prog, xp);
+            // Action bar pour CE métier
+            showXpActionBar(player, jobId, prog, xp);
 
             anyRewarded = true;
         }
@@ -270,41 +261,27 @@ public class JobModule implements CoreModule, Listener {
         }
     }
 
-    // ─── Boss Bar XP ────────────────────────────────────────────
+    // ─── Action Bar XP ──────────────────────────────────────────
 
-    private void showXpBossBar(Player player, String jobId, JobProgress prog, int xpGained) {
-        UUID uuid = player.getUniqueId();
+    private void showXpActionBar(Player player, String jobId, JobProgress prog, int xpGained) {
         int required = xpForLevel(prog.level + 1);
-        float progress = Math.min(1.0f, Math.max(0f, (float) prog.xp / required));
-        String jobName = getJobDisplayName(jobId);
+        int filled = Math.min(10, Math.max(0, (int) (10.0 * prog.xp / required)));
+        int pct = Math.min(100, (int) (100.0 * prog.xp / required));
 
-        Component title = Component.text("✦ ", NamedTextColor.GOLD)
-                .append(Component.text(jobName, NamedTextColor.YELLOW, TextDecoration.BOLD))
-                .append(Component.text(" Niv." + prog.level, NamedTextColor.WHITE))
-                .append(Component.text(" — ", NamedTextColor.DARK_GRAY))
-                .append(Component.text(prog.xp + "/" + required + " XP", NamedTextColor.AQUA))
-                .append(Component.text(" (+" + xpGained + ")", NamedTextColor.GREEN));
+        String barFill  = "█".repeat(filled);
+        String barEmpty = "░".repeat(10 - filled);
 
-        BossBar bar = xpBossBars.get(uuid);
-        if (bar == null) {
-            bar = BossBar.bossBar(title, progress, BossBar.Color.YELLOW, BossBar.Overlay.NOTCHED_10);
-            xpBossBars.put(uuid, bar);
-            player.showBossBar(bar);
-        } else {
-            bar.name(title);
-            bar.progress(progress);
-        }
+        Component msg = Component.text("✦ ", NamedTextColor.GOLD)
+                .append(Component.text(getJobDisplayName(jobId), NamedTextColor.YELLOW, TextDecoration.BOLD))
+                .append(Component.text(" Niv." + prog.level + "  ", NamedTextColor.WHITE))
+                .append(Component.text("[", NamedTextColor.DARK_GRAY))
+                .append(Component.text(barFill, NamedTextColor.GREEN))
+                .append(Component.text(barEmpty, NamedTextColor.DARK_GREEN))
+                .append(Component.text("]  ", NamedTextColor.DARK_GRAY))
+                .append(Component.text(pct + "%  ", NamedTextColor.AQUA))
+                .append(Component.text("+" + xpGained + " xp", NamedTextColor.GREEN));
 
-        Integer oldTask = xpBarHideTasks.remove(uuid);
-        if (oldTask != null) Bukkit.getScheduler().cancelTask(oldTask);
-
-        BossBar finalBar = bar;
-        int taskId = Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            player.hideBossBar(finalBar);
-            xpBossBars.remove(uuid);
-            xpBarHideTasks.remove(uuid);
-        }, 80L).getTaskId(); // 80 ticks = 4 secondes
-        xpBarHideTasks.put(uuid, taskId);
+        player.sendActionBar(msg);
     }
 
     // ─── Paliers de Récompenses ─────────────────────────────────
@@ -593,10 +570,6 @@ public class JobModule implements CoreModule, Listener {
     @EventHandler
     public void onPlayerQuit(org.bukkit.event.player.PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        BossBar bar = xpBossBars.remove(uuid);
-        if (bar != null) event.getPlayer().hideBossBar(bar);
-        Integer hideTask = xpBarHideTasks.remove(uuid);
-        if (hideTask != null) Bukkit.getScheduler().cancelTask(hideTask);
         flushPlayerCounters(uuid);
         savePlayerJobsAsync(uuid);
         allJobs.remove(uuid);

@@ -1,20 +1,17 @@
 # ================================================================
-#  Biome : Cavernes Cristallines
-#  Remplace une partie des Deep Dark.
-#  Caractéristiques : cristaux géants d'améthyste, stalactites
-#  de calcite, glow lichen partout, son ambiant cristallin.
+#  Biome : Cavernes Cristallines — étend DEEP_DARK
+#  Cristaux géants d'améthyste, stalactites de calcite.
+#  (structures et mobs custom retirés)
 # ================================================================
 
 id: "CRYSTALLINE_CAVES"
 extends: "DEEP_DARK"
 
-# Couleur du ciel / eau / brouillard
 color:
   water: "#5b5bff"
   fog: "#1a1a2e"
   sky: "#0d0d1a"
 
-# Sons ambiants
 sounds:
   additions:
   - "block.amethyst_block.chime"
@@ -23,62 +20,7 @@ sounds:
     delay: 6000
     range: 16
 
-# Génération du terrain — hérite du Deep Dark mais avec des ajouts
-flora:
-  density: 0.5
-  items:
-  - id: "GLOW_LICHEN"
-    weight: 100
-    threshold: 0.1
-  - id: "AMETHYST_CLUSTER"
-    weight: 40
-    threshold: 0.5
-  - id: "CALCITE"
-    weight: 60
-    threshold: 0.3
-
-# Blocs de surface et de fond
 surface:
   top: "CALCITE"
   filler: "TUFF"
   ocean: "DEEPSLATE"
-
-# Structures spécifiques au biome
-structures:
-- id: "CRYSTAL_CLUSTER_LARGE"
-  chance: 0.12
-- id: "CRYSTAL_SPIRE"
-  chance: 0.06
-
-# Spawn de mobs custom dans ce biome
-mobs:
-  spawns:
-  - id: "EndermanVide"
-    weight: 5
-    minGroup: 1
-    maxGroup: 2
-  - id: "SorcieresCavernes"
-    weight: 8
-    minGroup: 1
-    maxGroup: 1
-  vanilla:
-  - SCULK_CATALYST
-  - WARDEN
-
-# Ore generation — plus de cristaux
-ores:
-  AMETHYST_BLOCK:
-    size: 8
-    count: 12
-    minY: -64
-    maxY: -10
-  CALCITE:
-    size: 12
-    count: 8
-    minY: -64
-    maxY: 0
-  TUFF:
-    size: 16
-    count: 10
-    minY: -64
-    maxY: 0

@@ -1,8 +1,7 @@
 # ================================================================
-#  Biome : Hauts-Plateaux Volcaniques
-#  Remplace une partie des Basalt Deltas (Nether-ish surface).
-#  Surface : basalte, obsidienne, sources de lave, fumée noire.
-#  Danger maximal — loots de magma et blaze rods.
+#  Biome : Hauts-Plateaux Volcaniques — étend BASALT_DELTAS
+#  Basalte, obsidienne, sources de lave. Danger maximal.
+#  (structures et mobs custom retirés)
 # ================================================================
 
 id: "VOLCANIC_HIGHLANDS"
@@ -19,64 +18,10 @@ sounds:
     delay: 3000
     range: 20
 
-flora:
-  density: 0.05
-  items:
-  - id: "FIRE"
-    weight: 100
-    threshold: 0.7
-  - id: "MAGMA_BLOCK"
-    weight: 60
-    threshold: 0.5
-
 surface:
   top: "BASALT"
   filler: "MAGMA_BLOCK"
   ocean: "OBSIDIAN"
-
-trees:
-  density: 0
-  types: []
-
-ores:
-  OBSIDIAN:
-    size: 8
-    count: 12
-    minY: -64
-    maxY: 64
-  MAGMA_BLOCK:
-    size: 10
-    count: 20
-    minY: -32
-    maxY: 80
-  ANCIENT_DEBRIS:
-    size: 3
-    count: 3
-    minY: 8
-    maxY: 23
-
-structures:
-- id: "LAVA_GEYSER"
-  chance: 0.20
-- id: "RUINED_PORTAL"
-  chance: 0.05
-- id: "VOLCANO_CRATER"
-  chance: 0.03
-
-mobs:
-  spawns:
-  - id: "BlazeInfernal"
-    weight: 20
-    minGroup: 1
-    maxGroup: 3
-  - id: "GhastCorrompu"
-    weight: 8
-    minGroup: 1
-    maxGroup: 1
-  vanilla:
-  - BLAZE
-  - MAGMA_CUBE
-  - ZOMBIFIED_PIGLIN
 
 terrain:
   noiseMultiplier: 1.6
