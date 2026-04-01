@@ -1,4 +1,27 @@
+# IDE / OS
 .DS_Store
 *.class
+.idea/
+*.iml
+
+# Build
 build/
 .gradle/
+SurvivalCore/build/
+
+# Secrets (ne jamais commiter)
+.env
+
+# Fichiers server générés (gros binaires / logs)
+server/logs/
+server/cache/
+server/world/
+server/world_nether/
+server/world_the_end/
+server/crash-reports/
+server/debug/
+server/session.lock
+server/plugins/SurvivalCore-*.jar
+server/plugins/SurvivalCore.jar
+server/faithless.zip
+server/rp_url.txt

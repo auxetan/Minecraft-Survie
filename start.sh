@@ -9,6 +9,12 @@
 # ================================================================
 set -euo pipefail
 
+# ── Charger les variables d'environnement locales (.env) ─────────
+if [ -f "$(cd "$(dirname "$0")" && pwd)/.env" ]; then
+    # shellcheck disable=SC1090
+    set -o allexport; source "$(cd "$(dirname "$0")" && pwd)/.env"; set +o allexport
+fi
+
 # ── Detection OS / Architecture ─────────────────────────────────
 OS="$(uname -s)"
 ARCH="$(uname -m)"
@@ -167,18 +173,68 @@ if [ -d "$FAITHLESS_DIR" ]; then
         FAITHLESS_SHA1=$(sha1sum "$FAITHLESS_ZIP" | awk '{print $1}')
     fi
 
-    # Choisir l'URL : HTTP tunnel (internet) > variable env > LAN
-    if [ -n "$PLAYIT_HTTP_URL" ]; then
-        RP_URL="${PLAYIT_HTTP_URL}/resourcepack"
-        ok "Pack de textures via tunnel HTTP Playit : $RP_URL"
-    elif [ -n "${PUBLIC_RP_URL:-}" ]; then
-        RP_URL="$PUBLIC_RP_URL"
-        ok "Pack de textures via PUBLIC_RP_URL : $RP_URL"
-    else
-        RP_URL="http://${LOCAL_IP}:${MODPAGE_PORT}/resourcepack"
-        warn "Pack de textures accessible LAN seulement : $RP_URL"
-        warn "Pour internet : crée un tunnel HTTP dans playit.gg (port $MODPAGE_PORT)"
-        warn "  Puis sauvegarde l'URL dans server/rp_url.txt"
+    # ── Choisir / publier l'URL du pack ─────────────────────────
+    # Priorité : GitHub Releases > playit HTTP > PUBLIC_RP_URL env > rp_url.txt > LAN
+    RP_URL=""
+    GITHUB_REPO="auxetan/Minecraft-Survie"
+    RELEASE_TAG="rp-latest"
+
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+        info "Upload du pack de textures sur GitHub Releases..."
+        # Supprimer l'ancienne release si elle existe
+        OLD_ID=$(curl -sf -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$GITHUB_REPO/releases/tags/$RELEASE_TAG" 2>/dev/null \
+            | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || echo "")
+        if [ -n "$OLD_ID" ]; then
+            curl -sf -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
+                "https://api.github.com/repos/$GITHUB_REPO/releases/$OLD_ID" > /dev/null 2>&1 || true
+        fi
+        # Supprimer le tag
+        curl -sf -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$GITHUB_REPO/git/refs/tags/$RELEASE_TAG" > /dev/null 2>&1 || true
+        # Créer la release
+        RELEASE_RESP=$(curl -sf -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\":\"$RELEASE_TAG\",\"name\":\"Resource Pack (auto)\",\"body\":\"Pack de textures Faithless — mis à jour automatiquement.\",\"prerelease\":true}" \
+            "https://api.github.com/repos/$GITHUB_REPO/releases" 2>/dev/null || echo "")
+        NEW_ID=$(echo "$RELEASE_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || echo "")
+        if [ -n "$NEW_ID" ]; then
+            UPLOAD_RESP=$(curl -sf -X POST \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Content-Type: application/zip" \
+                --data-binary @"$FAITHLESS_ZIP" \
+                "https://uploads.github.com/repos/$GITHUB_REPO/releases/$NEW_ID/assets?name=faithless.zip" 2>/dev/null || echo "")
+            RP_URL=$(echo "$UPLOAD_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('browser_download_url',''))" 2>/dev/null || echo "")
+            if [ -n "$RP_URL" ]; then
+                echo "$RP_URL" > "$SERVER_DIR/rp_url.txt"
+                ok "Pack de textures publié sur GitHub Releases : $RP_URL"
+            else
+                warn "Upload GitHub échoué (réponse inattendue) — fallback sur méthode suivante."
+            fi
+        else
+            warn "Création release GitHub échouée — fallback sur méthode suivante."
+        fi
+    fi
+
+    # Fallbacks si GitHub Releases n'a pas fonctionné
+    if [ -z "$RP_URL" ]; then
+        if [ -n "${PLAYIT_HTTP_URL:-}" ]; then
+            RP_URL="${PLAYIT_HTTP_URL}/resourcepack"
+            ok "Pack de textures via tunnel HTTP Playit : $RP_URL"
+        elif [ -n "${PUBLIC_RP_URL:-}" ]; then
+            RP_URL="$PUBLIC_RP_URL"
+            ok "Pack de textures via PUBLIC_RP_URL : $RP_URL"
+        elif [ -f "$SERVER_DIR/rp_url.txt" ]; then
+            RP_URL=$(cat "$SERVER_DIR/rp_url.txt" | tr -d '[:space:]')
+            ok "Pack de textures depuis rp_url.txt : $RP_URL"
+        else
+            RP_URL="http://${LOCAL_IP}:${MODPAGE_PORT}/resourcepack"
+            warn "Pack de textures accessible LAN seulement : $RP_URL"
+            warn "Pour le rendre accessible internet, ajoute dans .env :"
+            warn "  GITHUB_TOKEN=<ton_token_github>"
+            warn "  (repo auxetan/Minecraft-Survie doit être public)"
+        fi
     fi
 
     PROPS="$SERVER_DIR/server.properties"

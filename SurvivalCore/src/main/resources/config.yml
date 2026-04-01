@@ -24,3 +24,9 @@ common-fund-rate: 0.05
 bluemap:
   enabled: true
   port: 8100
+
+# URL publique du pack de textures (mise à jour automatiquement par start.sh via GitHub Releases)
+# Pour l'override manuel : mettre ici l'URL complète vers faithless.zip
+modpage:
+  port: 8080
+  server-ip: "localhost"
